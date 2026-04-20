@@ -3,6 +3,16 @@ using System.Collections.Generic;
 
 public partial class AudioManager : Node
 {
+    /// <summary>
+    /// Sets the background music volume (0.0 = silent, 1.0 = full volume).
+    /// </summary>
+    public void SetBackgroundMusicVolume(float volume)
+    {
+        if (_backgroundMusic != null)
+        {
+            _backgroundMusic.VolumeDb = Mathf.LinearToDb(Mathf.Clamp(volume, 0f, 1f));
+        }
+    }
     private AudioStreamPlayer? _backgroundMusic;
     private AudioStreamPlayer? _soundEffectPlayer;
     private readonly Dictionary<int, AudioStream> _levelMusicCache = new();

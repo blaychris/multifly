@@ -20,6 +20,9 @@ public partial class StageClear : Node2D
 
     public override void _Ready()
     {
+        // Lower BGM volume to 50% for stage clear
+        var audioManager = GetNodeOrNull<AudioManager>("/root/AudioManager");
+        audioManager?.SetBackgroundMusicVolume(0.25f);
         gameState = GetNodeOrNull<GameState>("/root/GameState");
         titleLabel = GetNodeOrNull<Label>("TitleLabel");
         clearTimeLabel = GetNodeOrNull<Label>("ClearTimeLabel");
@@ -120,14 +123,16 @@ public partial class StageClear : Node2D
 
     private void OnReplayPressed()
     {
-        // Stop background music before replaying
         var audioManager = GetNodeOrNull<AudioManager>("/root/AudioManager");
+        audioManager?.SetBackgroundMusicVolume(1.0f);
         audioManager?.StopBackgroundMusic();
         GetTree().ChangeSceneToFile("res://scenes/Gameplay.tscn");
     }
 
     private void OnNextStagePressed()
     {
+        var audioManager = GetNodeOrNull<AudioManager>("/root/AudioManager");
+        audioManager?.SetBackgroundMusicVolume(1.0f);
         // Use GameState singleton for level management
         if (gameState == null)
         {
@@ -147,8 +152,8 @@ public partial class StageClear : Node2D
 
     private void OnExitPressed()
     {
-        // Stop background music when exiting to main menu
         var audioManager = GetNodeOrNull<AudioManager>("/root/AudioManager");
+        audioManager?.SetBackgroundMusicVolume(1.0f);
         audioManager?.StopBackgroundMusic();
         GetTree().ChangeSceneToFile("res://scenes/MainMenu.tscn");
     }

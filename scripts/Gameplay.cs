@@ -962,7 +962,9 @@ public partial class Gameplay : Node2D
             stageResult.BackspaceUses = backspaceUseCount;
             stageResult.FlawlessAnswersBonus = (wrongAnswerCount == 0) ? FlawlessAnswersBonus : 0;
             stageResult.NoBackspaceBonus = (backspaceUseCount == 0) ? NoBackspaceBonus : 0;
-            stageResult.StageScore = stageResult.StageClearBonus + stageResult.TargetFlyScore + stageResult.ExtraCleanupBonus + stageResult.FlawlessAnswersBonus + stageResult.NoBackspaceBonus;
+            // Apply time penalty: subtract (TimeInSeconds × 10)
+            double timeInSeconds = stageResult.TargetClearTimeMs / 1000.0;
+            stageResult.StageScore = (int)(stageResult.StageClearBonus + stageResult.TargetFlyScore + stageResult.ExtraCleanupBonus + stageResult.FlawlessAnswersBonus + stageResult.NoBackspaceBonus - (timeInSeconds * 10));
             gameState.RecordStageResult(stageResult);
         }
 

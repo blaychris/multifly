@@ -8,6 +8,9 @@ public partial class GameOver : Control
 
     public override void _Ready()
     {
+        // Lower BGM volume to 50% for game over
+        var audioManager = GetNodeOrNull<AudioManager>("/root/AudioManager");
+        audioManager?.SetBackgroundMusicVolume(0.25f);
             // Removed orphaned GameState reference
         retryButton = GetNode<Button>("RetryButton");
         mainMenuButton = GetNode<Button>("MainMenuButton");
@@ -18,16 +21,16 @@ public partial class GameOver : Control
 
     private void OnRetryPressed()
     {
-                // Stop background music before retrying
-                var audioManager = GetNodeOrNull<AudioManager>("/root/AudioManager");
-                audioManager?.StopBackgroundMusic();
-                GetTree().ChangeSceneToFile("res://scenes/Gameplay.tscn");
+            var audioManager = GetNodeOrNull<AudioManager>("/root/AudioManager");
+            audioManager?.SetBackgroundMusicVolume(1.0f);
+            audioManager?.StopBackgroundMusic();
+            GetTree().ChangeSceneToFile("res://scenes/Gameplay.tscn");
     }
 
     private void OnExitPressed()
     {
-        // Stop background music before exiting to main menu
         var audioManager = GetNodeOrNull<AudioManager>("/root/AudioManager");
+        audioManager?.SetBackgroundMusicVolume(1.0f);
         audioManager?.StopBackgroundMusic();
         GetTree().ChangeSceneToFile("res://scenes/MainMenu.tscn");
     }
