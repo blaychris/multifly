@@ -25,10 +25,8 @@ android/
 *.blend
 *.wav
 *.mp3
-*.ogg
 *.jpg
 *.jpeg
-*.png
 *.import
 
 # User/editor settings
@@ -41,6 +39,39 @@ android/
 
 # VS Code settings
 .vscode/
+
+# Optional: VS Code workspace/user settings (uncomment if not sharing these)
+# .vscode/settings.json
+# .vscode/launch.json
+
+# JetBrains IDEs (optional)
+.idea/
+
+# macOS system files
+.AppleDouble
+.Spotlight-V100
+.Trashes
+._*
+.fseventsd
+
+# Windows system files
+ehthumbs.db
+desktop.ini
+
+# Linux/KDE system files
+.directory
+
+# Editor swap/lock files
+*.swp
+*.swo
+.nfs*
+
+# Python virtual environments (if used)
+venv/
+.venv/
+
+# Optional: Godot export presets (if not sharing)
+# export_presets.cfg
 
 # OS generated files
 .DS_Store
