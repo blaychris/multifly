@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://dkeaa0dtun5i2"]
+
+[ext_resource type="Texture2D" uid="uid://c3pvkwpx4tck1" path="res://scenes/ui/start_icon.png" id="1"]
+
+[node name="StarDisplay" type="Control" unique_id=1179818402]
+layout_mode = 3
+anchors_preset = 0
+
+[node name="Stars" type="Label" parent="." unique_id=889741402]
+layout_mode = 0
+text = "Stars: 0"
+
+[node name="StarIcon" type="TextureRect" parent="." unique_id=1691033708]
+layout_mode = 0
+offset_left = 66.0
+offset_top = 5.0
+offset_right = 434.0
+offset_bottom = 355.0
+scale = Vector2(0.120000005, 0.120000005)
+texture = ExtResource("1")
+stretch_mode = 2

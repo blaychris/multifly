@@ -1,0 +1,14 @@
+[gd_scene format=2]
+
+[node name="HeartDisplay" type="Control"]
+rect_min_size = Vector2(200, 100)
+
+[node name="HeartIcon" type="TextureRect" parent="."]
+rect_position = Vector2(10, 10)
+rect_size = Vector2(64, 64)
+
+[node name="HeartCount" type="Label" parent="."]
+text = "1"
+rect_position = Vector2(80, 20)
+font_size = 32
+align = "center"

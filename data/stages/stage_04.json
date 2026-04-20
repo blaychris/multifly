@@ -1,0 +1,46 @@
+{
+  "stage": 4,
+  "difficulty": {
+    "target_flies": 11,
+    "initial_active_flies": 1,
+    "replacement_fly_count": 2,
+    "hearts": 1,
+    "multiplier_frequency": {
+      "1": 0.2,
+      "2": 0.35,
+      "3": 0.55,
+      "4": 0.8,
+      "5": 1.0,
+      "6": 1.0,
+      "7": 0.9,
+      "8": 0.7,
+      "9": 0.5
+    },
+    "l_frequency": {
+      "1": 0.2,
+      "2": 0.35,
+      "3": 0.55,
+      "4": 0.8,
+      "5": 1.0,
+      "6": 1.0,
+      "7": 0.9,
+      "8": 0.7,
+      "9": 0.5
+    },
+    "r_frequency": {
+      "1": 0.2,
+      "2": 0.35,
+      "3": 0.55,
+      "4": 0.8,
+      "5": 1.0,
+      "6": 1.0,
+      "7": 0.9,
+      "8": 0.7,
+      "9": 0.5
+    },
+    "fly_move_speed": 60.0,
+    "wrong_answer_advance_speed": 155.0,
+    "wrong_answer_penalty_distance": 110.0,
+    "stage_clear_delay_seconds": 4.0
+  }
+}

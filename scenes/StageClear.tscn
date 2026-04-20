@@ -1,0 +1,91 @@
+[gd_scene format=3 uid="uid://byed7owom81xf"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/HeartDisplay.tscn" id="1"]
+[ext_resource type="Script" uid="uid://35fl5u4nksvl" path="res://scripts/StageClear.cs" id="4"]
+
+[node name="StageClear" type="Node2D" unique_id=1208951440]
+script = ExtResource("4")
+
+[node name="HeartDisplay" parent="." unique_id=59294678 instance=ExtResource("1")]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 111.0
+offset_top = 86.0
+offset_right = 111.0
+offset_bottom = 86.0
+
+[node name="TitleLabel" type="Label" parent="." unique_id=745062522]
+offset_left = 71.0
+offset_top = 34.0
+offset_right = 281.0
+offset_bottom = 68.0
+text = "Stage Cleared!"
+horizontal_alignment = 1
+
+[node name="ClearTimeLabel" type="Label" parent="." unique_id=487595052]
+offset_left = 1.0
+offset_top = 129.0
+offset_right = 320.0
+offset_bottom = 157.0
+text = "Target clear time: 0.00s"
+horizontal_alignment = 1
+
+[node name="BestTimeLabel" type="Label" parent="." unique_id=147595053]
+offset_left = 1.0
+offset_top = 163.0
+offset_right = 309.0
+offset_bottom = 191.0
+text = "Best target clear: 0.00s"
+horizontal_alignment = 1
+
+[node name="ScoreLabel" type="Label" parent="." unique_id=187595054]
+offset_left = 7.0
+offset_top = 203.0
+offset_right = 315.0
+offset_bottom = 231.0
+text = "Stage score: 0"
+horizontal_alignment = 1
+
+[node name="BestScoreLabel" type="Label" parent="." unique_id=207595055]
+offset_left = 1.0
+offset_top = 237.0
+offset_right = 316.0
+offset_bottom = 265.0
+text = "Best stage score: 0"
+horizontal_alignment = 1
+
+[node name="BreakdownLabel" type="Label" parent="." unique_id=227595056]
+offset_left = 5.0
+offset_top = 262.0
+offset_right = 313.0
+offset_bottom = 564.0
+text = "Score criteria"
+
+[node name="ReplayButton" type="Button" parent="." unique_id=1752877355]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = 243.0
+offset_top = 10.0
+offset_right = 311.0
+offset_bottom = 46.0
+grow_horizontal = 0
+text = "Replay"
+
+[node name="NextStageButton" type="Button" parent="." unique_id=539161471]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 236.0
+offset_top = 588.0
+offset_right = 306.0
+offset_bottom = 624.0
+grow_vertical = 0
+text = "Next "
+
+[node name="ExitButton" type="Button" parent="." unique_id=1555764979]
+offset_left = 13.0
+offset_top = 10.0
+offset_right = 85.0
+offset_bottom = 46.0
+text = "Exit"

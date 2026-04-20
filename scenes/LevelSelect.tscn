@@ -1,0 +1,68 @@
+[gd_scene format=3 uid="uid://dj53ihb23vvuu"]
+
+[ext_resource type="Script" uid="uid://g1fga6f7o6ao" path="res://scripts/LevelSelect.cs" id="4_lvls"]
+
+[node name="LevelSelect" type="Control" unique_id=1587454842]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("4_lvls")
+
+[node name="LevelContainer" type="VBoxContainer" parent="." unique_id=1875314270]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -190.0
+offset_top = -360.0
+offset_right = 190.0
+offset_bottom = 360.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="LevelButton1" type="Button" parent="LevelContainer" unique_id=1839555955]
+custom_minimum_size = Vector2(380, 116)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Level 1"
+
+[node name="LevelButton2" type="Button" parent="LevelContainer" unique_id=58580263]
+custom_minimum_size = Vector2(380, 116)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+disabled = true
+text = "Level 2 (Locked)"
+
+[node name="LevelButton3" type="Button" parent="LevelContainer" unique_id=860435269]
+custom_minimum_size = Vector2(380, 116)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+disabled = true
+text = "Level 3 (Locked)"
+
+[node name="LevelButton4" type="Button" parent="LevelContainer" unique_id=1555107446]
+custom_minimum_size = Vector2(380, 116)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+disabled = true
+text = "Level 4 (Locked)"
+
+[node name="LevelButton5" type="Button" parent="LevelContainer" unique_id=1866650744]
+custom_minimum_size = Vector2(380, 116)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+disabled = true
+text = "Level 5 (Locked)"
+
+[node name="BackButton" type="Button" parent="LevelContainer" unique_id=295133253]
+custom_minimum_size = Vector2(380, 76)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Back to Main Menu"

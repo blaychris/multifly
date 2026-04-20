@@ -1,0 +1,23 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://scenes/ui/FloatingNumpad.tscn" type="PackedScene" id=1]
+[ext_resource path="res://scenes/ui/HeartDisplay.tscn" type="PackedScene" id=2]
+
+[node name="Customize" type="Control"]
+rect_min_size = Vector2(400, 800)
+
+[node name="FloatingNumpad" parent="." instance=ExtResource(1)]
+position = Vector2(200, 600)
+
+[node name="HeartDisplay" parent="." instance=ExtResource(2)]
+position = Vector2(20, 20)
+
+[node name="CustomizeButton" type="Button" parent="."]
+text = "Customize"
+rect_min_size = Vector2(200, 50)
+position = Vector2(100, 300)
+
+[node name="BackButton" type="Button" parent="."]
+text = "Back to Main Menu"
+rect_min_size = Vector2(200, 50)
+position = Vector2(100, 400)

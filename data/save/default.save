@@ -1,0 +1,11 @@
+{
+  "highScore": 0,
+  "currentLevel": 1,
+  "starsEarned": 0,
+  "hearts": 1,
+  "completedStages": [],
+  "customization": {
+    "playerSkin": "default",
+    "numpadColor": "blue"
+  }
+}

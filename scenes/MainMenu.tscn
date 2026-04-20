@@ -1,0 +1,114 @@
+[gd_scene format=3 uid="uid://c1i5xehbhktbh"]
+
+[ext_resource type="Script" uid="uid://y7r2ccybylti" path="res://scripts/MainMenu.cs" id="1_4j5oc"]
+[ext_resource type="Texture2D" uid="uid://cgvfdtvnvf8b7" path="res://scenes/ui/background_image.png" id="2_0ykhv"]
+
+[node name="MainMenu" type="Control" unique_id=1766710275]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_4j5oc")
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=109265283]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_0ykhv")
+expand_mode = 4
+
+[node name="Control" type="Control" parent="." unique_id=122565223]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="StartButton" type="Button" parent="Control" unique_id=2070334134]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -149.0
+offset_top = -221.0
+offset_right = 151.0
+offset_bottom = -149.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 28
+text = "Start"
+
+[node name="LevelSelectButton" type="Button" parent="Control" unique_id=785255675]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -149.0
+offset_top = -131.0
+offset_right = 151.0
+offset_bottom = -59.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 28
+text = "Levels"
+
+[node name="HighScoresButton" type="Button" parent="Control" unique_id=1778079836]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -149.0
+offset_top = -41.0
+offset_right = 151.0
+offset_bottom = 31.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 28
+text = "High Scores"
+
+[node name="CustomizeButton" type="Button" parent="Control" unique_id=2118359658]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -149.0
+offset_top = 49.0
+offset_right = 151.0
+offset_bottom = 121.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 28
+text = "Customize"
+
+[node name="ExitButton" type="Button" parent="Control" unique_id=1352152346]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = 137.0
+offset_right = 150.0
+offset_bottom = 209.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 28
+text = "Exit"
