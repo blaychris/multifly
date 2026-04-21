@@ -16,20 +16,35 @@ public partial class MainMenu : Control
         customizeButton = GetNode<Button>("Control/CustomizeButton");
         exitButton = GetNode<Button>("Control/ExitButton");
 
-        startButton.Pressed += OnStartButtonPressed;
+        startButton.Pressed += OnCampaignButtonPressed;
         levelSelectButton.Pressed += OnLevelSelectButtonPressed;
         highScoresButton.Pressed += OnHighScoresButtonPressed;
         customizeButton.Pressed += OnCustomizeButtonPressed;
         exitButton.Pressed += OnExitButtonPressed;
     }
 
-    private void OnStartButtonPressed()
+    private void OnCampaignButtonPressed()
     {
-        GetTree().ChangeSceneToFile("res://scenes/LevelSelect.tscn");
+        // Start campaign: always at level 1, reset campaign scores, enable campaign mode
+        var gameState = GetNodeOrNull<GameState>("/root/GameState");
+        if (gameState != null)
+        {
+            gameState.CurrentLevel = 1;
+            gameState.ResetCampaignScores();
+            gameState.StartCampaign(1);
+        }
+        GetTree().ChangeSceneToFile("res://scenes/Gameplay.tscn");
     }
 
     private void OnLevelSelectButtonPressed()
     {
+        // Level select disables campaign mode
+        var gameState = GetNodeOrNull<GameState>("/root/GameState");
+        if (gameState != null)
+        {
+            gameState.IsCampaignActive = false;
+            gameState.ResetCampaignScores();
+        }
         GetTree().ChangeSceneToFile("res://scenes/LevelSelect.tscn");
     }
 

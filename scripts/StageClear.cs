@@ -38,6 +38,13 @@ public partial class StageClear : Node2D
         replayButton.Pressed += OnReplayPressed;
         nextStageButton.Pressed += OnNextStagePressed;
         exitButton.Pressed += OnExitPressed;
+
+        if (gameState == null || !gameState.IsCampaignActive)
+        {
+            nextStageButton.Visible = false;
+            nextStageButton.Disabled = true;
+        }
+
         if (breakdownLabel != null)
         {
             breakdownLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
@@ -80,6 +87,20 @@ public partial class StageClear : Node2D
             if (heartDisplay != null)
                 heartDisplay.SetHeartCount(gameState.Hearts);
         }
+            var totalScoreLabel = GetNodeOrNull<Label>("TotalScoreLabel");
+            if (gameState != null && totalScoreLabel != null)
+            {
+                if (gameState.IsCampaignActive)
+                {
+                    int totalScore = gameState.GetCurrentCampaignScore();
+                    totalScoreLabel.Text = $"Total Score: {totalScore:N0}";
+                    totalScoreLabel.Visible = true;
+                }
+                else
+                {
+                    totalScoreLabel.Visible = false;
+                }
+            }
     }
 
 
@@ -116,8 +137,7 @@ public partial class StageClear : Node2D
             $"Bonus-window takedowns: {stageResult.ExtraCleanupKills} x 150 = +{stageResult.ExtraCleanupBonus:N0}",
             flawlessLine,
             cleanInputLine,
-            $"Total score from Stage 1 to Stage {stageResult.Level}: {stageResult.CampaignStageScoreTotal:N0}",
-            $"Best clear time and best stage score are recorded for each stage."
+            $"Total Score Stage 1 to {stageResult.Level}: {stageResult.CampaignStageScoreTotal:N0}"
         });
     }
 
@@ -125,7 +145,7 @@ public partial class StageClear : Node2D
     {
         var audioManager = GetNodeOrNull<AudioManager>("/root/AudioManager");
         audioManager?.SetBackgroundMusicVolume(1.0f);
-        audioManager?.StopBackgroundMusic();
+        //audioManager?.StopBackgroundMusic();
         GetTree().ChangeSceneToFile("res://scenes/Gameplay.tscn");
     }
 
@@ -141,6 +161,12 @@ public partial class StageClear : Node2D
         }
         if (gameState.CurrentLevel >= GameState.MaxLevelCount)
         {
+            // If in campaign, submit score to Google Play
+            if (gameState.IsCampaignActive)
+            {
+                int totalScore = gameState.GetCurrentCampaignScore();
+                gameState.SubmitScoreToGooglePlay(totalScore);
+            }
             GetTree().ChangeSceneToFile("res://scenes/LevelSelect.tscn");
             return;
         }
@@ -155,6 +181,13 @@ public partial class StageClear : Node2D
         var audioManager = GetNodeOrNull<AudioManager>("/root/AudioManager");
         audioManager?.SetBackgroundMusicVolume(1.0f);
         audioManager?.StopBackgroundMusic();
+
+        if (gameState != null && gameState.IsCampaignActive)
+        {
+            int totalScore = gameState.GetCurrentCampaignScore();
+            gameState.SubmitScoreToGooglePlay(totalScore);
+        }
+
         GetTree().ChangeSceneToFile("res://scenes/MainMenu.tscn");
     }
 

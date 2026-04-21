@@ -34,5 +34,14 @@ offset_right = 181.0
 offset_bottom = 291.0
 text = "Exit"
 
+
+[node name="TotalScoreLabel" type="Label" parent="." unique_id=999999999]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 120.0
+offset_right = 400.0
+offset_bottom = 150.0
+text = "Total Score: 0"
+
 [node name="HeartDisplay" parent="." unique_id=1549261954 instance=ExtResource("1")]
 anchors_preset = 0

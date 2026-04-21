@@ -2,10 +2,56 @@ using Godot;
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 
 public partial class GameState : Node
 {
+
+    // Placeholder for Google Play score submission
+    public async void SubmitScoreToGooglePlay(int score)
+    {
+        if (!IsCampaignActive)
+        {
+            GD.Print("[Google Play] Skipping score submit because not in campaign mode.");
+            return;
+        }
+
+        // Attempt to route leaderboard submissions through a Firebase REST service if available.
+        var firebaseService = GetNodeOrNull<FirebaseService>("/root/FirebaseService");
+        if (firebaseService != null)
+        {
+            string playerId = OS.GetUniqueId(); // Unique device ID
+            string playerName = "Player";
+            int stage = CurrentLevel;
+
+            GD.Print($"FirebaseService: Checking existing record for playerId={playerId} before submit...");
+            var existingEntry = await firebaseService.FetchLeaderboardEntryAsync(playerId);
+            if (existingEntry == null)
+            {
+                GD.Print("FirebaseService: No existing leaderboard record found for this device.");
+            }
+            else
+            {
+                GD.Print($"FirebaseService: Existing record found: score={existingEntry.Score}, stage={existingEntry.Stage}, timestamp={existingEntry.Timestamp}.");
+            }
+
+            if (existingEntry != null && existingEntry.Score >= score)
+            {
+                GD.Print($"FirebaseService: Current score {score} is not higher than existing record {existingEntry.Score}. Submission skipped.");
+                return;
+            }
+
+            GD.Print($"FirebaseService: Submitting new score {score} for playerId={playerId}...");
+            firebaseService.SubmitScore(playerId, playerName, score, stage);
+            return;
+        }
+
+        GD.Print($"[Google Play] Submitting score: {score}");
+        // TODO: Integrate with Google Play Games Services
+        GD.Print($"[Google Play] Score submitted successfully: {score}");
+    }
     public const int MaxLevelCount = 5;
+    private const string PersistenceFilePath = "user://game_state.json";
     private const long LeaderboardStageScoreMultiplier = 1_000_000_000L;
     private const long LeaderboardTimeMultiplier = 1_000L;
     private const long MaxLeaderboardTimeMs = 999_999L;
@@ -44,12 +90,94 @@ public partial class GameState : Node
     public int CurrentCampaignStageScoreTotal { get; private set; }
     public int CurrentCampaignStartLevel { get; private set; } = 1;
     public int CurrentCampaignStagesCompleted { get; private set; }
-    public bool IsCampaignActive { get; private set; }
+    public bool IsCampaignActive { get; set; }
     public StageResult? LastStageResult { get; private set; }
 
     private readonly Dictionary<int, long> bestFlyCountZeroTimesMs = new();
     private readonly Dictionary<int, int> bestStageScores = new();
     private readonly Dictionary<int, long> bestPackedStageScores = new();
+
+    public override void _Ready()
+    {
+        LoadPersistentData();
+    }
+
+    private sealed class PersistentSaveData
+    {
+        public int HighestUnlockedLevel { get; set; }
+        public Dictionary<int, long> BestFlyTimes { get; set; } = new();
+        public Dictionary<int, int> BestStageScores { get; set; } = new();
+        public Dictionary<int, long> BestPackedStageScores { get; set; } = new();
+    }
+
+    private void LoadPersistentData()
+    {
+        if (!FileAccess.FileExists(PersistenceFilePath))
+        {
+            return;
+        }
+
+        using var file = FileAccess.Open(PersistenceFilePath, FileAccess.ModeFlags.Read);
+        var content = file.GetAsText();
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return;
+        }
+
+        try
+        {
+            var data = JsonSerializer.Deserialize<PersistentSaveData>(content);
+            if (data == null)
+            {
+                return;
+            }
+
+            HighestUnlockedLevel = Math.Clamp(data.HighestUnlockedLevel, 1, MaxLevelCount);
+            bestFlyCountZeroTimesMs.Clear();
+            bestStageScores.Clear();
+            bestPackedStageScores.Clear();
+
+            foreach (var kvp in data.BestFlyTimes)
+            {
+                int level = Math.Clamp(kvp.Key, 1, MaxLevelCount);
+                bestFlyCountZeroTimesMs[level] = Math.Max(0L, kvp.Value);
+            }
+
+            foreach (var kvp in data.BestStageScores)
+            {
+                int level = Math.Clamp(kvp.Key, 1, MaxLevelCount);
+                bestStageScores[level] = Math.Max(0, kvp.Value);
+            }
+
+            foreach (var kvp in data.BestPackedStageScores)
+            {
+                int level = Math.Clamp(kvp.Key, 1, MaxLevelCount);
+                bestPackedStageScores[level] = Math.Max(0L, kvp.Value);
+            }
+        }
+        catch (Exception e)
+        {
+            GD.PrintErr($"Failed to load persisted game state: {e.Message}");
+        }
+    }
+
+    private void SavePersistentData()
+    {
+        var data = new PersistentSaveData
+        {
+            HighestUnlockedLevel = HighestUnlockedLevel,
+            BestFlyTimes = new Dictionary<int, long>(bestFlyCountZeroTimesMs),
+            BestStageScores = new Dictionary<int, int>(bestStageScores),
+            BestPackedStageScores = new Dictionary<int, long>(bestPackedStageScores)
+        };
+
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        var content = JsonSerializer.Serialize(data, options);
+
+        using var file = FileAccess.Open(PersistenceFilePath, FileAccess.ModeFlags.Write);
+        file.StoreString(content);
+        file.Close();
+    }
 
     public GameState()
     {
@@ -103,6 +231,7 @@ public partial class GameState : Node
         }
 
         bestFlyCountZeroTimesMs[normalizedLevel] = normalizedMilliseconds;
+        SavePersistentData();
         return true;
     }
 
@@ -145,43 +274,88 @@ public partial class GameState : Node
         return totalScore;
     }
 
+    // Track scores for the current campaign run
+    private readonly Dictionary<int, int> campaignStageScores = new();
+
     public void RecordStageResult(StageResult stageResult)
     {
         int normalizedLevel = Math.Max(1, stageResult.Level);
         int normalizedScore = Math.Max(0, stageResult.StageScore);
 
+        // Track best score for leaderboard
         bool isNewBestScore = !bestStageScores.TryGetValue(normalizedLevel, out int existingBestScore) || normalizedScore > existingBestScore;
         if (isNewBestScore)
         {
             bestStageScores[normalizedLevel] = normalizedScore;
         }
 
+        // Track campaign run score (not best)
+        campaignStageScores[normalizedLevel] = normalizedScore;
+
         stageResult.Level = normalizedLevel;
         stageResult.StageScore = normalizedScore;
         stageResult.PackedLeaderboardScore = BuildPackedLeaderboardScore(stageResult);
+        bool isNewBestPackedScore = false;
         if (!bestPackedStageScores.TryGetValue(normalizedLevel, out long existingPackedStageScore) || stageResult.PackedLeaderboardScore > existingPackedStageScore)
         {
             bestPackedStageScores[normalizedLevel] = stageResult.PackedLeaderboardScore;
+            isNewBestPackedScore = true;
         }
 
-        CurrentCampaignStageScoreTotal = GetTotalStageScoreToLevel(normalizedLevel);
-        CurrentCampaignLeaderboardScore = GetTotalPackedLeaderboardScoreToLevel(normalizedLevel);
-        CurrentCampaignStagesCompleted = normalizedLevel;
-        CurrentCampaignStartLevel = 1;
-        IsCampaignActive = true;
-        stageResult.CampaignStageScoreTotal = CurrentCampaignStageScoreTotal;
-        stageResult.CampaignLeaderboardScore = CurrentCampaignLeaderboardScore;
-        stageResult.CampaignStartLevel = CurrentCampaignStartLevel;
+        if (IsCampaignActive)
+        {
+            CurrentCampaignStageScoreTotal = 0;
+            foreach (var score in campaignStageScores.Values)
+                CurrentCampaignStageScoreTotal += score;
+            CurrentCampaignLeaderboardScore = GetTotalPackedLeaderboardScoreToLevel(normalizedLevel);
+            CurrentCampaignStagesCompleted = normalizedLevel;
+            stageResult.CampaignStageScoreTotal = CurrentCampaignStageScoreTotal;
+            stageResult.CampaignLeaderboardScore = CurrentCampaignLeaderboardScore;
+            stageResult.CampaignStartLevel = CurrentCampaignStartLevel;
+        }
+        else
+        {
+            CurrentCampaignStageScoreTotal = 0;
+            CurrentCampaignLeaderboardScore = 0;
+            CurrentCampaignStagesCompleted = 0;
+            stageResult.CampaignStageScoreTotal = 0;
+            stageResult.CampaignLeaderboardScore = 0;
+            stageResult.CampaignStartLevel = 0;
+        }
+
         stageResult.IsNewBestScore = isNewBestScore;
         stageResult.BestStageScore = GetBestStageScore(normalizedLevel);
         stageResult.BestTargetClearTimeMs = GetBestFlyCountZeroTime(normalizedLevel);
 
         LastStageResult = stageResult;
+
+        if (isNewBestScore || isNewBestPackedScore)
+        {
+            SavePersistentData();
+        }
+    }
+
+    public int GetCurrentCampaignScore()
+    {
+        int total = 0;
+        foreach (var score in campaignStageScores.Values)
+            total += score;
+        return total;
+    }
+
+    public void ResetCampaignScores()
+    {
+        campaignStageScores.Clear();
     }
 
     public void UnlockNextLevel()
     {
-        HighestUnlockedLevel = Math.Min(MaxLevelCount, Math.Max(HighestUnlockedLevel, CurrentLevel + 1));
+        int newUnlocked = Math.Min(MaxLevelCount, Math.Max(HighestUnlockedLevel, CurrentLevel + 1));
+        if (newUnlocked != HighestUnlockedLevel)
+        {
+            HighestUnlockedLevel = newUnlocked;
+            SavePersistentData();
+        }
     }
 
     public void UpdateHearts(int change)
