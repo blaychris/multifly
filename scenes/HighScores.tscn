@@ -1,32 +1,21 @@
 [gd_scene format=3 uid="uid://c0nufwxvhrxc7"]
 
 [ext_resource type="PackedScene" path="res://scenes/ui/HeartDisplay.tscn" id="1"]
-[ext_resource type="Script" path="res://scripts/HighScores.cs" id="2"]
+[ext_resource type="Script" uid="uid://haqy7b5hrjlk" path="res://scripts/HighScores.cs" id="2"]
 
 [node name="HighScores" type="Control" unique_id=764612039]
-script = ExtResource("2")
 layout_mode = 3
-anchor_left = 0.0
-anchor_top = 0.0
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_left = 0.0
-margin_top = 0.0
-margin_right = 0.0
-margin_bottom = 0.0
+script = ExtResource("2")
 
 [node name="HighScoreList" type="VBoxContainer" parent="." unique_id=2057983909]
 layout_mode = 0
-anchor_left = 0.0
-anchor_top = 0.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_left = 20.0
-margin_top = 20.0
-margin_right = -20.0
-margin_bottom = -20.0
-size_flags_vertical = 3
 size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="Title" type="Label" parent="HighScoreList" unique_id=715611374]
 layout_mode = 2
@@ -36,29 +25,21 @@ text = "High Scores"
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-rect_min_size = Vector2(0, 40)
 
 [node name="ScoreLabel" type="Label" parent="HighScoreList/ScoreEntry" unique_id=1360346683]
 layout_mode = 2
-text = "Player Name: 100"
 size_flags_horizontal = 3
 size_flags_vertical = 3
-rect_min_size = Vector2(0, 40)
-align = "left"
-valign = "center"
+text = "Player Name: 100"
 
 [node name="ScoreScroll" type="ScrollContainer" parent="HighScoreList" unique_id=770890117]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-rect_min_size = Vector2(0, 300)
-custom_constants/vseparation = 8
 
 [node name="ScoreRows" type="VBoxContainer" parent="HighScoreList/ScoreScroll" unique_id=1679874680]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 1
-spacing = 8
 
 [node name="HeartDisplay" parent="HighScoreList" unique_id=300575593 instance=ExtResource("1")]
 layout_mode = 2

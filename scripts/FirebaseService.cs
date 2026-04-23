@@ -19,8 +19,79 @@ public sealed class LeaderboardEntry
 public partial class FirebaseService : Node
 {
     private readonly System.Net.Http.HttpClient httpClient = new();
+    private const string FirebaseApiKey = "AIzaSyBrFdewHRaXYMhVDLnVdVbihvqpF7sMfX8"; // Replace with your Firebase Web API key
     private const string FirebaseDatabaseUrl = "https://multifly-25c64-default-rtdb.asia-southeast1.firebasedatabase.app/";
     private const string LeaderboardPath = "leaderboard/scores";
+
+    private string _idToken = string.Empty;
+    private string _refreshToken = string.Empty;
+    private DateTimeOffset _tokenExpiry = DateTimeOffset.MinValue;
+
+    public bool IsAuthenticated => !string.IsNullOrWhiteSpace(_idToken) && _tokenExpiry > DateTimeOffset.UtcNow;
+
+    public bool LastFetchFailed { get; private set; }
+    public string LastFetchErrorMessage { get; private set; } = string.Empty;
+    public string LastFetchDebugInfo { get; private set; } = string.Empty;
+
+    private string BuildDatabaseUrl(string path)
+    {
+        var baseUrl = FirebaseDatabaseUrl.TrimEnd('/');
+        path = path.Trim('/');
+        var url = $"{baseUrl}/{path}.json";
+
+        if (IsAuthenticated)
+        {
+            url += url.Contains('?') ? $"&auth={_idToken}" : $"?auth={_idToken}";
+        }
+
+        return url;
+    }
+
+    public async Task<bool> SignInAsync(string email, string password)
+    {
+        try
+        {
+            // Use anonymous auth path only; credentials are ignored.
+            var url = $"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FirebaseApiKey}";
+
+            var payload = new
+            {
+                returnSecureToken = true
+            };
+
+            using var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+            using var response = await httpClient.PostAsync(url, content);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                GD.PrintErr($"FirebaseService: SignIn failed: {responseBody}");
+                return false;
+            }
+
+            using var document = JsonDocument.Parse(responseBody);
+            _idToken = document.RootElement.GetProperty("idToken").GetString() ?? string.Empty;
+            _refreshToken = document.RootElement.GetProperty("refreshToken").GetString() ?? string.Empty;
+            var expiresIn = document.RootElement.GetProperty("expiresIn").GetString() ?? "0";
+            if (long.TryParse(expiresIn, out var expiresSeconds))
+            {
+                _tokenExpiry = DateTimeOffset.UtcNow.AddSeconds(expiresSeconds - 30);
+            }
+
+            GD.Print("FirebaseService: Successfully signed in and acquired idToken.");
+            return true;
+        }
+        catch (Exception e)
+        {
+            GD.PrintErr($"FirebaseService: SignInAsync exception: {e.Message}");
+            return false;
+        }
+    }
+
+    private string ToDatabaseUrl(string path)
+    {
+        return BuildDatabaseUrl(path);
+    }
 
     public void SubmitScore(string playerId, string playerName, int score, int stage)
     {
@@ -41,10 +112,7 @@ public partial class FirebaseService : Node
             };
 
             string json = JsonSerializer.Serialize(payload);
-            // Ensure no double slashes or whitespace in URL
-            string baseUrl = FirebaseDatabaseUrl.TrimEnd('/');
-            string path = LeaderboardPath.Trim('/');
-            string url = $"{baseUrl}/{path}/{playerId}.json";
+            string url = ToDatabaseUrl($"{LeaderboardPath}/{playerId}");
 
             GD.Print($"FirebaseService: Submitting to URL: {url}");
 
@@ -63,17 +131,27 @@ public partial class FirebaseService : Node
 
     public async Task<List<LeaderboardEntry>> FetchLeaderboardAsync()
     {
+        LastFetchFailed = false;
+        LastFetchErrorMessage = string.Empty;
+        LastFetchDebugInfo = string.Empty;
+
         try
         {
-            string baseUrl = FirebaseDatabaseUrl.TrimEnd('/');
-            string path = LeaderboardPath.Trim('/');
-            string url = $"{baseUrl}/{path}.json";
+            string url = ToDatabaseUrl(LeaderboardPath);
 
             using var response = await httpClient.GetAsync(url);
             string responseBody = await response.Content.ReadAsStringAsync();
 
             GD.Print($"FirebaseService: FetchLeaderboard response code={response.StatusCode}");
             GD.Print($"FirebaseService: Leaderboard data={responseBody}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                LastFetchFailed = true;
+                LastFetchErrorMessage = $"FirebaseService: FetchLeaderboard failed with status {response.StatusCode}: {responseBody}";
+                LastFetchDebugInfo = GetFetchDebugInfo(url);
+                return new List<LeaderboardEntry>();
+            }
 
             var entries = new List<LeaderboardEntry>();
             using var document = JsonDocument.Parse(responseBody);
@@ -107,18 +185,32 @@ public partial class FirebaseService : Node
         }
         catch (Exception e)
         {
-            GD.PrintErr($"FirebaseService: FetchLeaderboard failed: {e.Message}");
+            LastFetchFailed = true;
+            LastFetchErrorMessage = $"FirebaseService: FetchLeaderboard failed: {e.Message}";
+            LastFetchDebugInfo = GetFetchDebugInfo(LeaderboardPath);
+            GD.PrintErr(LastFetchErrorMessage);
             return new List<LeaderboardEntry>();
         }
+    }
+
+    private string GetFetchDebugInfo(string url)
+    {
+        return "FirebaseService Debug Info:\n" +
+               $"ApiKey={FirebaseApiKey}\n" +
+               $"DatabaseUrl={FirebaseDatabaseUrl}\n" +
+               $"LeaderboardPath={LeaderboardPath}\n" +
+               $"RequestUrl={url}\n" +
+               $"IsAuthenticated={IsAuthenticated}\n" +
+               $"IdToken={(string.IsNullOrWhiteSpace(_idToken) ? "<empty>" : _idToken)}\n" +
+               $"RefreshToken={(string.IsNullOrWhiteSpace(_refreshToken) ? "<empty>" : _refreshToken)}\n" +
+               $"TokenExpiry={_tokenExpiry:O}";
     }
 
     public async Task<LeaderboardEntry?> FetchLeaderboardEntryAsync(string playerId)
     {
         try
         {
-            string baseUrl = FirebaseDatabaseUrl.TrimEnd('/');
-            string path = LeaderboardPath.Trim('/');
-            string url = $"{baseUrl}/{path}/{playerId}.json";
+            string url = ToDatabaseUrl($"{LeaderboardPath}/{playerId}");
 
             GD.Print($"FirebaseService: Fetching leaderboard record from {url}...");
             using var response = await httpClient.GetAsync(url);

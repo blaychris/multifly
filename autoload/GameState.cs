@@ -86,6 +86,7 @@ public partial class GameState : Node
     public int HighestUnlockedLevel { get; set; }
     public int Hearts { get; set; }
     public int FliesDestroyed { get; set; }
+    public bool IsBackgroundMusicEnabled { get; set; } = true;
     public long CurrentCampaignLeaderboardScore { get; private set; }
     public int CurrentCampaignStageScoreTotal { get; private set; }
     public int CurrentCampaignStartLevel { get; private set; } = 1;

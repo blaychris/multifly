@@ -66,8 +66,18 @@ public partial class HighScores : Control
 
             if (entries.Count == 0)
             {
-                GD.Print("HighScores: No leaderboard entries found.");
-                AddPlaceholderRow("No leaderboard entries found.");
+                var placeholderText = "No leaderboard entries found.";
+                if (firebaseService.LastFetchFailed)
+                {
+                    placeholderText = firebaseService.LastFetchErrorMessage;
+                    if (!string.IsNullOrWhiteSpace(firebaseService.LastFetchDebugInfo))
+                    {
+                        placeholderText += "\n\n" + firebaseService.LastFetchDebugInfo;
+                    }
+                }
+
+                GD.Print($"HighScores: {placeholderText}");
+                AddPlaceholderRow(placeholderText);
                 return;
             }
 
@@ -95,36 +105,59 @@ public partial class HighScores : Control
         GD.Print($"HighScores: Adding row #{rank} for {entry.PlayerName} with score {entry.Score}.");
 
         bool isCurrentPlayer = entry.PlayerId == OS.GetUniqueId();
-        Control row;
+
+        var rowContent = new HBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.Fill,
+            SizeFlagsVertical = Control.SizeFlags.Fill,
+            CustomMinimumSize = new Vector2(0, 40)
+        };
+
+        Control row = rowContent;
         if (isCurrentPlayer)
         {
-            var backgroundRow = new ColorRect();
-            backgroundRow.Name = $"ScoreRow{rank}";
-            backgroundRow.Color = new Color(1f, 0.4f, 0.4f, 0.7f);
-            backgroundRow.SizeFlagsHorizontal = Control.SizeFlags.Fill;
-            backgroundRow.SizeFlagsVertical = Control.SizeFlags.Fill;
-            backgroundRow.CustomMinimumSize = new Vector2(0, 40);
-            backgroundRow.MouseFilter = MouseFilterEnum.Ignore;
+            var backgroundRow = new PanelContainer
+            {
+                Name = $"ScoreRow{rank}",
+                SizeFlagsHorizontal = Control.SizeFlags.Fill,
+                SizeFlagsVertical = Control.SizeFlags.Fill,
+                CustomMinimumSize = new Vector2(0, 40)
+            };
+
+            var styleBox = new StyleBoxFlat();
+            styleBox.BgColor = new Color(1f, 0.4f, 0.4f, 0.7f);
+            backgroundRow.AddThemeStyleboxOverride("panel", styleBox);
+
+            backgroundRow.AddChild(rowContent);
             row = backgroundRow;
         }
         else
         {
-            var normalRow = new HBoxContainer();
-            normalRow.Name = $"ScoreRow{rank}";
-            normalRow.SizeFlagsHorizontal = Control.SizeFlags.Fill;
-            normalRow.SizeFlagsVertical = Control.SizeFlags.Fill;
-            normalRow.CustomMinimumSize = new Vector2(0, 40);
-            row = normalRow;
+            rowContent.Name = $"ScoreRow{rank}";
         }
 
-        var label = new Label();
         string displayName = isCurrentPlayer ? "You" : entry.PlayerName;
-        label.Text = $"{rank}. {displayName} — {entry.Score:N0} (Stage {entry.Stage})";
-        label.SizeFlagsHorizontal = Control.SizeFlags.Fill;
-        label.SizeFlagsVertical = Control.SizeFlags.Fill;
-        label.CustomMinimumSize = new Vector2(0, 40);
 
-        row.AddChild(label);
+        var nameLabel = new Label
+        {
+            Text = $"{rank}. {displayName} (Stage {entry.Stage})",
+            SizeFlagsHorizontal = Control.SizeFlags.Fill,
+            SizeFlagsVertical = Control.SizeFlags.Fill,
+            CustomMinimumSize = new Vector2(0, 40),
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+
+        var scoreLabel = new Label
+        {
+            Text = $"{entry.Score:N0}",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.Fill,
+            CustomMinimumSize = new Vector2(0, 40),
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+
+        rowContent.AddChild(nameLabel);
+        rowContent.AddChild(scoreLabel);
         scoreRows.AddChild(row);
         AddSeparatorLine();
     }
@@ -155,6 +188,7 @@ public partial class HighScores : Control
 
         var label = new Label();
         label.Text = text;
+        label.AutowrapMode = TextServer.AutowrapMode.Word;
         label.SizeFlagsHorizontal = Control.SizeFlags.Fill;
         label.SizeFlagsVertical = Control.SizeFlags.Fill;
         label.CustomMinimumSize = new Vector2(0, 40);

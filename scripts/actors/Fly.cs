@@ -23,6 +23,10 @@ public partial class Fly : Area2D
             float radius = rectangleShape.Size.Length() * 0.5f;
             return (radius, collisionShape.Position);
         }
+        if (collisionShape?.Shape is CircleShape2D circleShape)
+        {
+            return (circleShape.Radius, collisionShape.Position);
+        }
         return null;
     }
     private static readonly RandomNumberGenerator Rng = new();
@@ -82,7 +86,7 @@ public partial class Fly : Area2D
     private const string OutlineEnabledParameter = "enabled";
     private AnimationPlayer? animationPlayer;
     private CollisionShape2D? collisionShape;
-    private Sprite2D? sprite;
+    private AnimatedSprite2D? sprite;
     private ShaderMaterial? outlineMaterial;
     private Label? leftEyeLabel;
     private Label? rightEyeLabel;
@@ -94,6 +98,8 @@ public partial class Fly : Area2D
     private Vector2 baseScale = Vector2.One;
     private FlyMovementMode movementMode = FlyMovementMode.ChaseTarget;
     private float bonusTargetX;
+    private const float TiltMaxRadians = 0.48f; // ~10 degrees
+    private const float TiltLerpSpeed = 12.0f;
 
     public int LeftEye => MultiplierLeft;
     public int RightEye => MultiplierRight;
@@ -104,10 +110,15 @@ public partial class Fly : Area2D
         InputPickable = true;
         animationPlayer = GetNodeOrNull<AnimationPlayer>("AnimationPlayer");
         collisionShape = GetNodeOrNull<CollisionShape2D>("CollisionShape2D");
-        sprite = GetNodeOrNull<Sprite2D>("Sprite");
+        sprite = GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
+        if (sprite != null)
+        {
+            sprite.Animation = "default";
+            sprite.Play("default");
+            leftEyeLabel = sprite.GetNodeOrNull<Label>("l_eye");
+            rightEyeLabel = sprite.GetNodeOrNull<Label>("r_eye");
+        }
         outlineMaterial = sprite?.Material as ShaderMaterial;
-        leftEyeLabel = GetNodeOrNull<Label>("l_eye");
-        rightEyeLabel = GetNodeOrNull<Label>("r_eye");
         answerLabel = GetNodeOrNull<Label>("AnswerLabel");
         if (answerLabel != null)
         {
@@ -116,7 +127,21 @@ public partial class Fly : Area2D
         }
 
         playerTarget = GetParent()?.GetNodeOrNull<Node2D>("Player");
+        AreaEntered += OnAreaEntered;
         ResetFly();
+    }
+
+    private void OnAreaEntered(Area2D otherArea)
+    {
+        if (otherArea == this)
+        {
+            return;
+        }
+
+        if (otherArea is Fly otherFly)
+        {
+            GD.Print($"Fly collision: {Name} hit {otherFly.Name}");
+        }
     }
 
     public override void _InputEvent(Viewport viewport, InputEvent @event, int shapeIdx)
@@ -139,11 +164,40 @@ public partial class Fly : Area2D
         if (Velocity.LengthSquared() > 0.0001f)
         {
             float frameDelta = (float)delta;
-            GlobalPosition += Velocity * frameDelta;
-            // Dampen velocity (simulate friction)
-            Velocity *= 0.90f;
-            if (Velocity.Length() < 2.0f)
-                Velocity = Vector2.Zero;
+            Vector2 nextPosition = GlobalPosition + Velocity * frameDelta;
+            Vector2 clampedPosition = ClampGlobalPositionToMovementBounds(nextPosition);
+            GlobalPosition = clampedPosition;
+
+            if (clampedPosition != nextPosition)
+            {
+                // Bounce off the boundary instead of stopping.
+                UpdateSpriteTilt(frameDelta, Velocity.Normalized());
+
+                if (!Mathf.IsEqualApprox(clampedPosition.X, nextPosition.X))
+                {
+                    Velocity = new Vector2(-Velocity.X * 0.6f, Velocity.Y);
+                }
+                if (!Mathf.IsEqualApprox(clampedPosition.Y, nextPosition.Y))
+                {
+                    Velocity = new Vector2(Velocity.X, -Velocity.Y * 0.6f);
+                }
+
+                // If the remaining velocity is small, stop it to avoid jitter.
+                if (Velocity.Length() < 2.0f)
+                    Velocity = Vector2.Zero;
+            }
+            else
+            {
+                UpdateSpriteTilt(frameDelta, Velocity.Normalized());
+                // Dampen velocity (simulate friction)
+                Velocity *= 0.90f;
+                if (Velocity.Length() < 2.0f)
+                    Velocity = Vector2.Zero;
+            }
+        }
+        else
+        {
+            UpdateSpriteTilt((float)delta, Vector2.Zero);
         }
 
         if (movementMode == FlyMovementMode.BonusEscape)
@@ -196,6 +250,7 @@ public partial class Fly : Area2D
 
             float totalStep = (MoveSpeed * frameDelta) + penaltyStep;
             GlobalPosition = ClampGlobalPositionToMovementBounds(GlobalPosition + (moveDirection * totalStep));
+            UpdateSpriteTilt(frameDelta, moveDirection);
 
             if (HasReachedPlayer(targetPosition))
             {
@@ -218,6 +273,10 @@ public partial class Fly : Area2D
         InputPickable = true;
         SetVisualAlpha(1.0f);
         Scale = baseScale;
+        if (sprite != null)
+        {
+            sprite.Rotation = 0.0f;
+        }
         collisionShape?.SetDeferred("disabled", false);
         UpdateFlyAppearance();
     }
@@ -391,6 +450,22 @@ public partial class Fly : Area2D
         }
 
         return new Rect2(Vector2.Zero, Vector2.Zero);
+    }
+
+    private void UpdateSpriteTilt(float delta, Vector2 direction)
+    {
+        if (sprite == null)
+        {
+            return;
+        }
+
+        float targetRotation = 0.0f;
+        if (direction.LengthSquared() > 0.0001f)
+        {
+            targetRotation = Mathf.Clamp(direction.X, -1.0f, 1.0f) * TiltMaxRadians;
+        }
+
+        sprite.Rotation = Mathf.Lerp(sprite.Rotation, targetRotation, Mathf.Clamp(delta * TiltLerpSpeed, 0.0f, 1.0f));
     }
 
     private static float ClampAxis(float value, float minValue, float maxValue, float boundsCenter, float localOffset, float localSize)

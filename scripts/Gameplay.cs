@@ -121,7 +121,10 @@ public partial class Gameplay : Node2D
         stageStartTimeMsec = Time.GetTicksMsec();
         audioManager = GetNodeOrNull<AudioManager>("/root/AudioManager");
         LoadStageData();
-        audioManager?.PlayLevelBackgroundMusic(gameState?.CurrentLevel ?? 1);
+        if (gameState?.IsBackgroundMusicEnabled ?? true)
+        {
+            audioManager?.PlayLevelBackgroundMusic(gameState?.CurrentLevel ?? 1);
+        }
         flyScene = GD.Load<PackedScene>("res://scenes/actors/Fly.tscn");
         floatingNumpad = GetNodeOrNull<FloatingNumpad>("FloatingNumpad");
         heartDisplay = GetNodeOrNull<HeartDisplay>("HeartDisplay");
@@ -659,7 +662,6 @@ public partial class Gameplay : Node2D
         {
             float preferredMinX = preferLeftHalf.Value ? minX : midpointX;
             float preferredMaxX = preferLeftHalf.Value ? midpointX : maxX;
-            preferredMaxX = Mathf.Max(preferredMinX, preferredMaxX - flyWidth); // Clamp right bound
 
             if (TryFindSpawnPositionInRange(occupiedPositions, spawnY, minimumSpacing, preferredMinX, preferredMaxX, maxAttempts / 2, out Vector2 preferredPosition))
             {
@@ -672,10 +674,15 @@ public partial class Gameplay : Node2D
             return fallbackRandomPosition;
         }
 
-        float halfWidth = Mathf.Max((maxX - minX) * 0.5f, 1.0f);
-        float preferredStartX = preferLeftHalf.GetValueOrDefault(true) ? minX : midpointX;
-        float fallbackOffset = (fallbackIndex * minimumSpacing) % halfWidth;
-        float fallbackX = Mathf.Clamp(preferredStartX + fallbackOffset, minX, maxX);
+        float fallbackStartX = minX;
+        float fallbackEndX = maxX;
+        if (preferLeftHalf.HasValue)
+        {
+            fallbackStartX = preferLeftHalf.Value ? minX : midpointX;
+            fallbackEndX = preferLeftHalf.Value ? midpointX : maxX;
+        }
+
+        float fallbackX = Mathf.Clamp(SpawnRng.RandfRange(fallbackStartX, Mathf.Max(fallbackEndX, fallbackStartX)), minX, maxX);
         return new Vector2(fallbackX, spawnY);
     }
 

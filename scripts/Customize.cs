@@ -1,34 +1,81 @@
 using Godot;
+#nullable enable
 
 public partial class Customize : Node
 {
-    // This method is called when the node enters the scene tree for the first time.
+    private Button? bgmToggleButton;
+    private Button? exitButton;
+    private AudioManager? audioManager;
+    private GameState? gameState;
+    private bool isMusicOn = true;
+
     public override void _Ready()
     {
-        // Initialize customization options here
+        bgmToggleButton = GetNodeOrNull<Button>("BgmToggleButton");
+        exitButton = GetNodeOrNull<Button>("ExitButton");
+        audioManager = GetNodeOrNull<AudioManager>("/root/AudioManager");
+        gameState = GetNodeOrNull<GameState>("/root/GameState");
+
+        if (gameState != null)
+        {
+            isMusicOn = gameState.IsBackgroundMusicEnabled;
+        }
+        else if (audioManager != null)
+        {
+            isMusicOn = audioManager.IsBackgroundMusicPlaying();
+        }
+
+        if (bgmToggleButton != null)
+        {
+            bgmToggleButton.ToggleMode = true;
+            bgmToggleButton.Pressed += OnBgmTogglePressed;
+            UpdateBgmToggleText();
+            bgmToggleButton.ButtonPressed = isMusicOn;
+        }
+
+        if (exitButton != null)
+        {
+            exitButton.Pressed += OnExitPressed;
+        }
     }
 
-    // Method to change player character appearance
-    public void ChangeCharacterAppearance(string appearance)
+    private void OnBgmTogglePressed()
     {
-        // Logic to change the player's character appearance
+        if (audioManager == null)
+        {
+            return;
+        }
+
+        isMusicOn = !isMusicOn;
+        if (gameState != null)
+        {
+            gameState.IsBackgroundMusicEnabled = isMusicOn;
+        }
+
+        if (!isMusicOn)
+        {
+            audioManager.StopBackgroundMusic();
+        }
+
+        UpdateBgmToggleText();
+        if (bgmToggleButton != null)
+        {
+            bgmToggleButton.ButtonPressed = isMusicOn;
+        }
     }
 
-    // Method to adjust game settings
-    public void AdjustGameSettings(float volume, bool isFullScreen)
+    private void UpdateBgmToggleText()
     {
-        // Logic to adjust game settings such as volume and fullscreen mode
+        if (bgmToggleButton == null)
+        {
+            return;
+        }
+
+        bgmToggleButton.Text = isMusicOn ? "Background Music: On" : "Background Music: Off";
     }
 
-    // Method to save customization options
-    public void SaveCustomization()
+    private void OnExitPressed()
     {
-        // Logic to save the current customization options
-    }
-
-    // Method to load customization options
-    public void LoadCustomization()
-    {
-        // Logic to load previously saved customization options
+        GetTree().ChangeSceneToFile("res://scenes/MainMenu.tscn");
     }
 }

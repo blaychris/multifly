@@ -80,6 +80,11 @@ public partial class AudioManager : Node
         _backgroundMusic.Stop();
     }
 
+    public bool IsBackgroundMusicPlaying()
+    {
+        return _backgroundMusic?.Playing ?? false;
+    }
+
     public void PlaySoundEffect(AudioStream soundEffect)
     {
         if (_soundEffectPlayer == null)
