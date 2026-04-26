@@ -103,6 +103,7 @@ public partial class Gameplay : Node2D
     public override void _PhysicsProcess(double delta)
     {
         UpdateStageClearCountdown((float)delta);
+        UpdateAutopickSelection();
         ResolveFlyOverlaps();
     }
 
@@ -166,6 +167,7 @@ public partial class Gameplay : Node2D
             floatingNumpad.InputChanged += OnNumpadInputChanged;
             floatingNumpad.BackspaceUsed += OnNumpadBackspaceUsed;
             floatingNumpad.LayoutChanged += OnFloatingNumpadLayoutChanged;
+            floatingNumpad.AutopickToggled += OnAutopickToggled;
             OnFloatingNumpadLayoutChanged(floatingNumpad.GetNumpadTopY());
         }
         heartDisplay?.SetHeartCount(playerHearts);
@@ -195,6 +197,7 @@ public partial class Gameplay : Node2D
             floatingNumpad.InputChanged -= OnNumpadInputChanged;
             floatingNumpad.BackspaceUsed -= OnNumpadBackspaceUsed;
             floatingNumpad.LayoutChanged -= OnFloatingNumpadLayoutChanged;
+            floatingNumpad.AutopickToggled -= OnAutopickToggled;
         }
 
         // Do not stop background music here so it continues on StageClear screen
@@ -506,7 +509,11 @@ public partial class Gameplay : Node2D
     {
         if (selectedFly == null)
         {
-            return;
+            UpdateAutopickSelection();
+            if (selectedFly == null)
+            {
+                return;
+            }
         }
 
         selectedFly.SetTypedInput(currentInput);
@@ -585,6 +592,7 @@ public partial class Gameplay : Node2D
         }
 
         SpawnReplacementFlies(currentStageSettings.ReplacementFlyCount);
+        UpdateAutopickSelection();
     }
 
     private void DestroyRemainingFlies()
@@ -860,6 +868,7 @@ public partial class Gameplay : Node2D
         }
 
         EnsureInitialFlyCount();
+        UpdateAutopickSelection();
     }
 
     public void OnPlayerHit()
@@ -880,6 +889,49 @@ public partial class Gameplay : Node2D
     private void OnFlySelected(Fly fly)
     {
         SelectFly(fly);
+    }
+
+    private void OnAutopickToggled(bool enabled)
+    {
+        if (enabled)
+        {
+            UpdateAutopickSelection();
+        }
+    }
+
+    private void UpdateAutopickSelection()
+    {
+        if (floatingNumpad == null || !floatingNumpad.IsAutopickEnabled || stageClearTriggered)
+        {
+            return;
+        }
+
+        Fly? closestFly = null;
+        float closestDistance = float.MaxValue;
+        foreach (Fly fly in flies)
+        {
+            if (!IsInstanceValid(fly))
+            {
+                continue;
+            }
+
+            float distance = Mathf.Abs(fly.GlobalPosition.Y - flyTargetPosition.Y);
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestFly = fly;
+            }
+        }
+
+        if (closestFly == null)
+        {
+            return;
+        }
+
+        if (selectedFly != closestFly)
+        {
+            SelectFly(closestFly);
+        }
     }
 
     private void OnGameOver()

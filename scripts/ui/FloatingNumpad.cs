@@ -12,17 +12,26 @@ public partial class FloatingNumpad : Control
     [Signal]
     public delegate void BackspaceUsedEventHandler();
 
+    [Signal]
+    public delegate void AutopickToggledEventHandler(bool enabled);
+
     private string currentInput = string.Empty;
     private bool isFlySelected = false;
     private Control? numpadPanel;
     private Control? centerTargetButton;
     private Viewport? viewport;
+    private Button? autopickButton;
+    private bool isAutopickRed = false;
+    private GameState? gameState;
+
+    public bool IsAutopickEnabled => isAutopickRed;
 
     public override void _Ready()
     {
         numpadPanel = GetNode<Control>("Numpad");
         centerTargetButton = GetNode<Control>("Numpad/Button5");
         viewport = GetViewport();
+        gameState = GetNodeOrNull<GameState>("/root/GameState");
         if (viewport != null)
         {
             viewport.SizeChanged += OnViewportSizeChanged;
@@ -35,6 +44,14 @@ public partial class FloatingNumpad : Control
             int number = i;
             Button numpadButton = GetNode<Button>("Numpad/Button" + number);
             numpadButton.Pressed += () => OnNumpadButtonPressed(number);
+        }
+
+        autopickButton = GetNode<Button>("Numpad/AutopickButton");
+        if (autopickButton != null)
+        {
+            autopickButton.Pressed += ToggleAutopickButtonColor;
+            isAutopickRed = gameState?.IsAutopickEnabled ?? false;
+            autopickButton.Modulate = isAutopickRed ? Colors.Red : Colors.White;
         }
 
         Button backButton = GetNode<Button>("Numpad/BackButton");
@@ -127,6 +144,23 @@ public partial class FloatingNumpad : Control
         currentInput = currentInput[..^1];
         EmitSignal(SignalName.BackspaceUsed);
         EmitSignal(SignalName.InputChanged, currentInput);
+    }
+
+    private void ToggleAutopickButtonColor()
+    {
+        if (autopickButton == null)
+        {
+            return;
+        }
+
+        isAutopickRed = !isAutopickRed;
+        if (gameState != null)
+        {
+            gameState.IsAutopickEnabled = isAutopickRed;
+        }
+
+        autopickButton.Modulate = isAutopickRed ? Colors.Red : Colors.White;
+        EmitSignal(SignalName.AutopickToggled, isAutopickRed);
     }
 
     private void EmitLayoutChangedSignal()

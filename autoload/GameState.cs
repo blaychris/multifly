@@ -87,6 +87,7 @@ public partial class GameState : Node
     public int Hearts { get; set; }
     public int FliesDestroyed { get; set; }
     public bool IsBackgroundMusicEnabled { get; set; } = true;
+    public bool IsAutopickEnabled { get; set; } = false;
     public long CurrentCampaignLeaderboardScore { get; private set; }
     public int CurrentCampaignStageScoreTotal { get; private set; }
     public int CurrentCampaignStartLevel { get; private set; } = 1;
@@ -109,6 +110,7 @@ public partial class GameState : Node
         public Dictionary<int, long> BestFlyTimes { get; set; } = new();
         public Dictionary<int, int> BestStageScores { get; set; } = new();
         public Dictionary<int, long> BestPackedStageScores { get; set; } = new();
+        public bool IsAutopickEnabled { get; set; }
     }
 
     private void LoadPersistentData()
@@ -169,7 +171,8 @@ public partial class GameState : Node
             HighestUnlockedLevel = HighestUnlockedLevel,
             BestFlyTimes = new Dictionary<int, long>(bestFlyCountZeroTimesMs),
             BestStageScores = new Dictionary<int, int>(bestStageScores),
-            BestPackedStageScores = new Dictionary<int, long>(bestPackedStageScores)
+            BestPackedStageScores = new Dictionary<int, long>(bestPackedStageScores),
+            IsAutopickEnabled = IsAutopickEnabled
         };
 
         var options = new JsonSerializerOptions { WriteIndented = true };

@@ -9,7 +9,13 @@ rect_min_size = Vector2(400, 800)
 [node name="BgmToggleButton" type="Button" parent="."]
 text = "Background Music: On"
 rect_min_size = Vector2(280, 60)
-position = Vector2(60, 280)
+position = Vector2(60, 240)
+toggle_mode = true
+
+[node name="AutopickToggleButton" type="Button" parent="."]
+text = "Autopick: Off"
+rect_min_size = Vector2(280, 60)
+position = Vector2(60, 320)
 toggle_mode = true
 
 [node name="ExitButton" type="Button" parent="."]

@@ -4,10 +4,12 @@ using Godot;
 public partial class Customize : Node
 {
     private Button? bgmToggleButton;
+    private Button? autopickToggleButton;
     private Button? exitButton;
     private AudioManager? audioManager;
     private GameState? gameState;
     private bool isMusicOn = true;
+    private bool isAutopickOn = false;
 
     public override void _Ready()
     {
@@ -31,6 +33,16 @@ public partial class Customize : Node
             bgmToggleButton.Pressed += OnBgmTogglePressed;
             UpdateBgmToggleText();
             bgmToggleButton.ButtonPressed = isMusicOn;
+        }
+
+        autopickToggleButton = GetNodeOrNull<Button>("AutopickToggleButton");
+        if (autopickToggleButton != null)
+        {
+            autopickToggleButton.ToggleMode = true;
+            autopickToggleButton.Pressed += OnAutopickTogglePressed;
+            isAutopickOn = gameState?.IsAutopickEnabled ?? false;
+            UpdateAutopickToggleText();
+            autopickToggleButton.ButtonPressed = isAutopickOn;
         }
 
         if (exitButton != null)
@@ -72,6 +84,31 @@ public partial class Customize : Node
         }
 
         bgmToggleButton.Text = isMusicOn ? "Background Music: On" : "Background Music: Off";
+    }
+
+    private void UpdateAutopickToggleText()
+    {
+        if (autopickToggleButton == null)
+        {
+            return;
+        }
+
+        autopickToggleButton.Text = isAutopickOn ? "Autopick: On" : "Autopick: Off";
+    }
+
+    private void OnAutopickTogglePressed()
+    {
+        isAutopickOn = !isAutopickOn;
+        if (gameState != null)
+        {
+            gameState.IsAutopickEnabled = isAutopickOn;
+        }
+
+        UpdateAutopickToggleText();
+        if (autopickToggleButton != null)
+        {
+            autopickToggleButton.ButtonPressed = isAutopickOn;
+        }
     }
 
     private void OnExitPressed()
