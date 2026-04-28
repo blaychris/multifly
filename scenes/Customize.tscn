@@ -18,7 +18,13 @@ rect_min_size = Vector2(280, 60)
 position = Vector2(60, 320)
 toggle_mode = true
 
+[node name="ExternalKeyboardToggleButton" type="Button" parent="."]
+text = "External Keyboard: Off"
+rect_min_size = Vector2(280, 60)
+position = Vector2(60, 400)
+toggle_mode = true
+
 [node name="ExitButton" type="Button" parent="."]
 text = "Exit"
 rect_min_size = Vector2(280, 60)
-position = Vector2(60, 360)
+position = Vector2(60, 460)

@@ -1,14 +1,11 @@
-[gd_scene format=2]
+[gd_scene format=3 uid="uid://wwvt0t0f8upy"]
 
-[node name="HeartDisplay" type="Control"]
-rect_min_size = Vector2(200, 100)
+[node name="HeartDisplay" type="Control" unique_id=747326602]
+layout_mode = 3
+anchors_preset = 0
 
-[node name="HeartIcon" type="TextureRect" parent="."]
-rect_position = Vector2(10, 10)
-rect_size = Vector2(64, 64)
+[node name="HeartIcon" type="TextureRect" parent="." unique_id=1722424571]
+layout_mode = 0
 
-[node name="HeartCount" type="Label" parent="."]
-text = "1"
-rect_position = Vector2(80, 20)
-font_size = 32
-align = "center"
+[node name="HeartCount" type="Label" parent="." unique_id=1040182906]
+layout_mode = 0

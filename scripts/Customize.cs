@@ -5,11 +5,13 @@ public partial class Customize : Node
 {
     private Button? bgmToggleButton;
     private Button? autopickToggleButton;
+    private Button? externalKeyboardToggleButton;
     private Button? exitButton;
     private AudioManager? audioManager;
     private GameState? gameState;
     private bool isMusicOn = true;
     private bool isAutopickOn = false;
+    private bool isExternalKeyboardOn = false;
 
     public override void _Ready()
     {
@@ -43,6 +45,16 @@ public partial class Customize : Node
             isAutopickOn = gameState?.IsAutopickEnabled ?? false;
             UpdateAutopickToggleText();
             autopickToggleButton.ButtonPressed = isAutopickOn;
+        }
+
+        externalKeyboardToggleButton = GetNodeOrNull<Button>("ExternalKeyboardToggleButton");
+        if (externalKeyboardToggleButton != null)
+        {
+            externalKeyboardToggleButton.ToggleMode = true;
+            externalKeyboardToggleButton.Pressed += OnExternalKeyboardTogglePressed;
+            isExternalKeyboardOn = gameState?.IsExternalKeyboardEnabled ?? false;
+            UpdateExternalKeyboardToggleText();
+            externalKeyboardToggleButton.ButtonPressed = isExternalKeyboardOn;
         }
 
         if (exitButton != null)
@@ -96,6 +108,16 @@ public partial class Customize : Node
         autopickToggleButton.Text = isAutopickOn ? "Autopick: On" : "Autopick: Off";
     }
 
+    private void UpdateExternalKeyboardToggleText()
+    {
+        if (externalKeyboardToggleButton == null)
+        {
+            return;
+        }
+
+        externalKeyboardToggleButton.Text = isExternalKeyboardOn ? "External Keyboard: On" : "External Keyboard: Off";
+    }
+
     private void OnAutopickTogglePressed()
     {
         isAutopickOn = !isAutopickOn;
@@ -108,6 +130,21 @@ public partial class Customize : Node
         if (autopickToggleButton != null)
         {
             autopickToggleButton.ButtonPressed = isAutopickOn;
+        }
+    }
+
+    private void OnExternalKeyboardTogglePressed()
+    {
+        isExternalKeyboardOn = !isExternalKeyboardOn;
+        if (gameState != null)
+        {
+            gameState.IsExternalKeyboardEnabled = isExternalKeyboardOn;
+        }
+
+        UpdateExternalKeyboardToggleText();
+        if (externalKeyboardToggleButton != null)
+        {
+            externalKeyboardToggleButton.ButtonPressed = isExternalKeyboardOn;
         }
     }
 

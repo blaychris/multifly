@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dua7aysc32knb"]
 
 [ext_resource type="PackedScene" uid="uid://crq5lif0ynbrc" path="res://scenes/ui/FloatingNumpad.tscn" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/ui/HeartDisplay.tscn" id="2"]
+[ext_resource type="PackedScene" uid="uid://wwvt0t0f8upy" path="res://scenes/ui/HeartDisplay.tscn" id="2"]
 [ext_resource type="Texture2D" uid="uid://bmb6j2ia4a5uu" path="res://scenes/ui/bg1.png" id="2_gnmmn"]
 [ext_resource type="PackedScene" uid="uid://duykmyx88qnmw" path="res://scenes/actors/Player.tscn" id="4"]
 [ext_resource type="PackedScene" uid="uid://cif6ubkt616d2" path="res://scenes/actors/Fly.tscn" id="5"]
@@ -17,8 +17,6 @@ expand_mode = 4
 [node name="FloatingNumpad" parent="." unique_id=2082369169 instance=ExtResource("1")]
 
 [node name="HeartDisplay" parent="." unique_id=1270198425 instance=ExtResource("2")]
-layout_mode = 3
-anchors_preset = 0
 offset_left = 10.0
 offset_top = 10.0
 offset_right = 10.0
@@ -35,7 +33,6 @@ text = "Flies : 0"
 horizontal_alignment = 2
 
 [node name="StageClearBarBackground" type="ColorRect" parent="." unique_id=94821437]
-visible = false
 offset_left = 190.0
 offset_top = 40.0
 offset_right = 390.0
@@ -43,7 +40,6 @@ offset_bottom = 54.0
 color = Color(0.121569, 0.168627, 0.121569, 0.8)
 
 [node name="StageClearBarFill" type="ColorRect" parent="." unique_id=196113084]
-visible = false
 offset_left = 192.0
 offset_top = 42.0
 offset_right = 388.0

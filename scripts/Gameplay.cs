@@ -89,6 +89,7 @@ public partial class Gameplay : Node2D
     private int backspaceUseCount;
     private int cleanupWindowKillCount;
     private bool spawnLeftHalfNext = true;
+    private bool selectedFlyIsAutopick;
     private readonly List<Fly> flies = new();
     private StageSettings currentStageSettings = new();
     private AudioManager? audioManager;
@@ -103,8 +104,59 @@ public partial class Gameplay : Node2D
     public override void _PhysicsProcess(double delta)
     {
         UpdateStageClearCountdown((float)delta);
-        UpdateAutopickSelection();
+
+        // Only refresh autopick selection while autopick is enabled and
+        // either no fly is selected or the current selection was chosen by autopick.
+        if (floatingNumpad != null && floatingNumpad.IsAutopickEnabled &&
+            (selectedFly == null || selectedFlyIsAutopick))
+        {
+            UpdateAutopickSelection();
+        }
+
         ResolveFlyOverlaps();
+    }
+
+    public override void _Input(InputEvent @event)
+    {
+        if (@event is not InputEventKey keyEvent || !keyEvent.Pressed || keyEvent.IsEcho())
+        {
+            return;
+        }
+
+        if (floatingNumpad == null)
+        {
+            return;
+        }
+
+        bool isExternalKeyboardEnabled = gameState?.IsExternalKeyboardEnabled ?? false;
+        if (!isExternalKeyboardEnabled)
+        {
+            return;
+        }
+
+        // If a physical key is pressed and no fly is selected, let autopick choose one first.
+        if (selectedFly == null && floatingNumpad.IsAutopickEnabled)
+        {
+            UpdateAutopickSelection();
+        }
+
+        int? digit = null;
+        int unicode = (int)keyEvent.Unicode;
+        if (unicode >= '0' && unicode <= '9')
+        {
+            digit = unicode - '0';
+        }
+
+        if (digit.HasValue)
+        {
+            floatingNumpad.SimulateDigitInput(digit.Value);
+            return;
+        }
+
+        if (keyEvent.Keycode == Key.Backspace || keyEvent.Keycode == Key.Delete)
+        {
+            floatingNumpad.SimulateBackspaceInput();
+        }
     }
 
     private void InitializeGame()
@@ -157,11 +209,18 @@ public partial class Gameplay : Node2D
             Vector2 viewportSize = GetViewportRect().Size;
             backgroundTexture.Position = Vector2.Zero;
             backgroundTexture.Size = viewportSize * 1.0f;
-        }
-        if (stageClearBarFill != null)
-        {
+
+            stageClearBarFill.Position = new Vector2(20.0f, stageClearBarFill.Position.Y);
+            stageClearBarFill.Size = new Vector2(viewportSize.X - 40.0f, stageClearBarFill.Size.Y/2);
             stageClearBarFullWidth = stageClearBarFill.Size.X;
+            stageClearBarBackground.Position = new Vector2(18.0f, stageClearBarBackground.Position.Y);
+            stageClearBarBackground.Size = new Vector2(viewportSize.X - 36.0f, stageClearBarBackground.Size.Y/2);
+
+
         }
+
+
+        
         if (floatingNumpad != null)
         {
             floatingNumpad.InputChanged += OnNumpadInputChanged;
@@ -480,7 +539,7 @@ public partial class Gameplay : Node2D
         return availablePairs[^1];
     }
 
-    public void SelectFly(Fly fly)
+    public void SelectFly(Fly fly, bool isAutopick = false)
     {
         if (selectedFly != null)
         {
@@ -488,6 +547,7 @@ public partial class Gameplay : Node2D
         }
 
         selectedFly = fly;
+        selectedFlyIsAutopick = isAutopick;
         selectedFly.Select();
         selectedFly.SetTypedInput(string.Empty);
         floatingNumpad?.BeginInput();
@@ -537,6 +597,7 @@ public partial class Gameplay : Node2D
         {
             Fly flyToDestroy = selectedFly;
             selectedFly = null;
+            selectedFlyIsAutopick = false;
             floatingNumpad?.EndInput();
             flyToDestroy.DestroyFly();
             return;
@@ -573,6 +634,7 @@ public partial class Gameplay : Node2D
         if (selectedFly == fly)
         {
             selectedFly = null;
+            selectedFlyIsAutopick = false;
             floatingNumpad?.EndInput();
         }
 
@@ -605,6 +667,7 @@ public partial class Gameplay : Node2D
             if (remainingFly == selectedFly)
             {
                 selectedFly = null;
+                selectedFlyIsAutopick = false;
             }
 
             if (IsInstanceValid(remainingFly))
@@ -842,6 +905,7 @@ public partial class Gameplay : Node2D
         if (selectedFly == fly)
         {
             selectedFly = null;
+            selectedFlyIsAutopick = false;
             floatingNumpad?.EndInput();
         }
 
@@ -888,11 +952,12 @@ public partial class Gameplay : Node2D
 
     private void OnFlySelected(Fly fly)
     {
-        SelectFly(fly);
+        SelectFly(fly, false);
     }
 
     private void OnAutopickToggled(bool enabled)
     {
+        // When the autopick setting changes, immediately refresh selection
         if (enabled)
         {
             UpdateAutopickSelection();
@@ -901,17 +966,28 @@ public partial class Gameplay : Node2D
 
     private void UpdateAutopickSelection()
     {
+        // Only run autopick if the numpad exists, autopick is enabled, and the stage is still active
         if (floatingNumpad == null || !floatingNumpad.IsAutopickEnabled || stageClearTriggered)
+        {
+            return;
+        }
+
+        // If the player has manually chosen a fly, do not override that choice with autopick
+        if (selectedFly != null && !selectedFlyIsAutopick)
         {
             return;
         }
 
         Fly? closestFly = null;
         float closestDistance = float.MaxValue;
+
+        // Find the fly closest to the numpad target position on the Y axis
         foreach (Fly fly in flies)
         {
+
             if (!IsInstanceValid(fly))
             {
+
                 continue;
             }
 
@@ -920,17 +996,20 @@ public partial class Gameplay : Node2D
             {
                 closestDistance = distance;
                 closestFly = fly;
+                
             }
         }
 
+        // If no valid fly was found, do nothing
         if (closestFly == null)
         {
             return;
         }
 
+        // Only update selection if the closest fly is not already selected
         if (selectedFly != closestFly)
         {
-            SelectFly(closestFly);
+            SelectFly(closestFly, true);
         }
     }
 

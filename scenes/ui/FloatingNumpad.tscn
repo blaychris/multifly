@@ -54,12 +54,26 @@ anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -144.0
 offset_top = -48.0
+offset_right = -101.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 18
+
+[node name="KeyboardSupportButton" type="Button" parent="Numpad" unique_id=971279559]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -97.0
+offset_top = -48.0
 offset_right = -54.0
 offset_bottom = -6.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_font_sizes/font_size = 18
-text = "Autopick"
 
 [node name="BackButton" type="Button" parent="Numpad" unique_id=1232053492]
 layout_mode = 1

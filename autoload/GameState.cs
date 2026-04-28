@@ -88,6 +88,7 @@ public partial class GameState : Node
     public int FliesDestroyed { get; set; }
     public bool IsBackgroundMusicEnabled { get; set; } = true;
     public bool IsAutopickEnabled { get; set; } = false;
+    public bool IsExternalKeyboardEnabled { get; set; } = false;
     public long CurrentCampaignLeaderboardScore { get; private set; }
     public int CurrentCampaignStageScoreTotal { get; private set; }
     public int CurrentCampaignStartLevel { get; private set; } = 1;
@@ -111,6 +112,7 @@ public partial class GameState : Node
         public Dictionary<int, int> BestStageScores { get; set; } = new();
         public Dictionary<int, long> BestPackedStageScores { get; set; } = new();
         public bool IsAutopickEnabled { get; set; }
+        public bool IsExternalKeyboardEnabled { get; set; }
     }
 
     private void LoadPersistentData()
@@ -157,6 +159,9 @@ public partial class GameState : Node
                 int level = Math.Clamp(kvp.Key, 1, MaxLevelCount);
                 bestPackedStageScores[level] = Math.Max(0L, kvp.Value);
             }
+
+            IsAutopickEnabled = data.IsAutopickEnabled;
+            IsExternalKeyboardEnabled = data.IsExternalKeyboardEnabled;
         }
         catch (Exception e)
         {
@@ -172,7 +177,8 @@ public partial class GameState : Node
             BestFlyTimes = new Dictionary<int, long>(bestFlyCountZeroTimesMs),
             BestStageScores = new Dictionary<int, int>(bestStageScores),
             BestPackedStageScores = new Dictionary<int, long>(bestPackedStageScores),
-            IsAutopickEnabled = IsAutopickEnabled
+            IsAutopickEnabled = IsAutopickEnabled,
+            IsExternalKeyboardEnabled = IsExternalKeyboardEnabled
         };
 
         var options = new JsonSerializerOptions { WriteIndented = true };
@@ -189,6 +195,7 @@ public partial class GameState : Node
         HighestUnlockedLevel = 1;
         Hearts = 1;
         FliesDestroyed = 0;
+        IsExternalKeyboardEnabled = false;
         CurrentCampaignLeaderboardScore = 0;
         CurrentCampaignStageScoreTotal = 0;
         CurrentCampaignStagesCompleted = 0;
@@ -201,6 +208,7 @@ public partial class GameState : Node
         HighestUnlockedLevel = 1;
         Hearts = 1;
         FliesDestroyed = 0;
+        IsExternalKeyboardEnabled = false;
         LastStageResult = null;
         ResetCampaignProgress();
         bestFlyCountZeroTimesMs.Clear();

@@ -146,7 +146,8 @@ public partial class Fly : Area2D
 
     public override void _InputEvent(Viewport viewport, InputEvent @event, int shapeIdx)
     {
-        if (@event is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left })
+        if (@event is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } ||
+            @event is InputEventScreenTouch { Pressed: true })
         {
             EmitSignal(SignalName.FlySelected, this);
             viewport.SetInputAsHandled();
@@ -261,6 +262,7 @@ public partial class Fly : Area2D
 
     public void ResetFly()
     {
+        GD.Print("Fly reset");
         isSelected = false;
         isMoving = false;
         isExploding = false;
