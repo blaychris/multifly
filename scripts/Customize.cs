@@ -1,4 +1,6 @@
 using Godot;
+using System;
+using System.Collections.Generic;
 #nullable enable
 
 public partial class Customize : Node
@@ -7,6 +9,10 @@ public partial class Customize : Node
     private Button? autopickToggleButton;
     private Button? externalKeyboardToggleButton;
     private Button? exitButton;
+
+    private LineEdit? playerNameText;
+    private LineEdit? multiplesOfText;
+    private Label? unrankedLabel;
     private AudioManager? audioManager;
     private GameState? gameState;
     private bool isMusicOn = true;
@@ -17,6 +23,8 @@ public partial class Customize : Node
     {
         bgmToggleButton = GetNodeOrNull<Button>("BgmToggleButton");
         exitButton = GetNodeOrNull<Button>("ExitButton");
+        playerNameText = GetNodeOrNull<LineEdit>("PlayerNameText");
+        multiplesOfText = GetNodeOrNull<LineEdit>("MultiplesOf");
         audioManager = GetNodeOrNull<AudioManager>("/root/AudioManager");
         gameState = GetNodeOrNull<GameState>("/root/GameState");
 
@@ -61,6 +69,122 @@ public partial class Customize : Node
         {
             exitButton.Pressed += OnExitPressed;
         }
+
+        if (playerNameText != null)
+        {
+            playerNameText.Text = gameState?.PlayerName ?? string.Empty;
+            playerNameText.TextChanged += OnPlayerNameTextChanged;
+        }
+
+        unrankedLabel = GetNodeOrNull<Label>("MultiplesOf/Label2");
+        if (multiplesOfText != null)
+        {
+            multiplesOfText.Text = gameState?.FocusNumbers ?? string.Empty;
+            UpdateUnrankedLabelVisibility(multiplesOfText.Text);
+            multiplesOfText.TextChanged += OnMultiplesOfTextChanged;
+        }
+    }
+
+    private void OnPlayerNameTextChanged(string newText)
+    {
+        string updatedName = newText.Trim();
+        if (gameState != null)
+        {
+            gameState.SetPlayerName(updatedName);
+        }
+
+        var firebaseService = GetNodeOrNull<FirebaseService>("/root/FirebaseService");
+        if (firebaseService == null)
+        {
+            return;
+        }
+
+        string playerId = OS.GetUniqueId();
+        firebaseService.UpdatePlayerName(playerId, string.IsNullOrEmpty(updatedName) ? "Player" : updatedName);
+    }
+
+    private void OnMultiplesOfTextChanged(string newText)
+    {
+        if (multiplesOfText == null)
+        {
+            return;
+        }
+
+        string filtered = FilterFocusedNumbersText(newText);
+        if (filtered != newText)
+        {
+            multiplesOfText.Text = filtered;
+        }
+
+        UpdateUnrankedLabelVisibility(filtered);
+
+        if (gameState != null)
+        {
+            gameState.SetFocusNumbers(filtered);
+        }
+    }
+
+    private void UpdateUnrankedLabelVisibility(string text)
+    {
+        if (unrankedLabel == null)
+        {
+            return;
+        }
+
+        unrankedLabel.Visible = !string.IsNullOrEmpty(text.Trim());
+    }
+
+    private static string FilterFocusedNumbersText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return string.Empty;
+        }
+
+        var seenDigits = new HashSet<char>();
+        var filtered = new List<char>();
+        bool lastWasDigit = false;
+
+        foreach (char ch in text)
+        {
+            if (ch == ' ')
+            {
+                continue;
+            }
+
+            if (ch >= '1' && ch <= '9')
+            {
+                if (!seenDigits.Contains(ch))
+                {
+                    filtered.Add(ch);
+                    seenDigits.Add(ch);
+                    lastWasDigit = true;
+                }
+                else
+                {
+                    lastWasDigit = true;
+                }
+
+                continue;
+            }
+
+            if (ch == ',' && lastWasDigit)
+            {
+                if (filtered.Count > 0 && filtered[^1] != ',')
+                {
+                    filtered.Add(',');
+                }
+
+                lastWasDigit = false;
+            }
+        }
+
+        while (filtered.Count > 0 && filtered[^1] == ',')
+        {
+            filtered.RemoveAt(filtered.Count - 1);
+        }
+
+        return new string(filtered.ToArray());
     }
 
     private void OnBgmTogglePressed()

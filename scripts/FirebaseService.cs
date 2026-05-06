@@ -14,6 +14,8 @@ public sealed class LeaderboardEntry
     public int Score { get; set; }
     public int Stage { get; set; }
     public long Timestamp { get; set; }
+    public bool IsAutopickOn { get; set; }
+    public bool IsKeyboardSupportOn { get; set; }
 }
 
 public partial class FirebaseService : Node
@@ -93,12 +95,38 @@ public partial class FirebaseService : Node
         return BuildDatabaseUrl(path);
     }
 
-    public void SubmitScore(string playerId, string playerName, int score, int stage)
+    public void SubmitScore(string playerId, string playerName, int score, int stage, bool isAutopickOn = false, bool isKeyboardSupportOn = false)
     {
-        _ = SubmitScoreAsync(playerId, playerName, score, stage);
+        _ = SubmitScoreAsync(playerId, playerName, score, stage, isAutopickOn, isKeyboardSupportOn);
     }
 
-    private async Task SubmitScoreAsync(string playerId, string playerName, int score, int stage)
+    public void UpdatePlayerName(string playerId, string playerName)
+    {
+        _ = UpdatePlayerNameAsync(playerId, playerName);
+    }
+
+    private async Task UpdatePlayerNameAsync(string playerId, string playerName)
+    {
+        try
+        {
+            string url = ToDatabaseUrl($"{LeaderboardPath}/{playerId}/playerName");
+            string json = JsonSerializer.Serialize(playerName);
+
+            GD.Print($"FirebaseService: Updating playerName for playerId={playerId} at URL: {url}");
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            using var response = await httpClient.PutAsync(url, content);
+            string responseBody = await response.Content.ReadAsStringAsync();
+
+            GD.Print($"FirebaseService: UpdatePlayerName response code={response.StatusCode}");
+            GD.Print($"FirebaseService: UpdatePlayerName body={responseBody}");
+        }
+        catch (Exception e)
+        {
+            GD.PrintErr($"FirebaseService: UpdatePlayerName failed: {e.Message}");
+        }
+    }
+
+    private async Task SubmitScoreAsync(string playerId, string playerName, int score, int stage, bool isAutopickOn = false, bool isKeyboardSupportOn = false)
     {
         try
         {
@@ -108,7 +136,9 @@ public partial class FirebaseService : Node
                 ["playerName"] = playerName,
                 ["score"] = score,
                 ["stage"] = stage,
-                ["timestamp"] = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+                ["timestamp"] = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                ["isAutopickOn"] = isAutopickOn,
+                ["isKeyboardSupportOn"] = isKeyboardSupportOn
             };
 
             string json = JsonSerializer.Serialize(payload);
@@ -166,7 +196,9 @@ public partial class FirebaseService : Node
                         PlayerName = item.TryGetProperty("playerName", out var playerNameProp) ? playerNameProp.GetString() ?? "Unknown" : "Unknown",
                         Score = item.TryGetProperty("score", out var scoreProp) && scoreProp.TryGetInt32(out var scoreValue) ? scoreValue : 0,
                         Stage = item.TryGetProperty("stage", out var stageProp) && stageProp.TryGetInt32(out var stageValue) ? stageValue : 0,
-                        Timestamp = item.TryGetProperty("timestamp", out var timestampProp) && timestampProp.TryGetInt64(out var timestampValue) ? timestampValue : 0
+                        Timestamp = item.TryGetProperty("timestamp", out var timestampProp) && timestampProp.TryGetInt64(out var timestampValue) ? timestampValue : 0,
+                        IsAutopickOn = item.TryGetProperty("isAutopickOn", out var autoProp) && autoProp.ValueKind == JsonValueKind.True,
+                        IsKeyboardSupportOn = item.TryGetProperty("isKeyboardSupportOn", out var keyboardProp) && keyboardProp.ValueKind == JsonValueKind.True
                     });
                 }
             }

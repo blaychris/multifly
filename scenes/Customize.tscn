@@ -1,30 +1,89 @@
-[gd_scene load_steps=2 format=2]
+[gd_scene format=3 uid="uid://cr83bbuwetpk2"]
 
-[ext_resource path="res://scripts/Customize.cs" type="Script" id=1]
+[ext_resource type="Script" uid="uid://bgnhydy8lyoj0" path="res://scripts/Customize.cs" id="1"]
 
-[node name="Customize" type="Control"]
+[node name="Customize" type="Control" unique_id=1460797973]
+layout_mode = 3
+anchors_preset = 0
 script = ExtResource("1")
-rect_min_size = Vector2(400, 800)
 
-[node name="BgmToggleButton" type="Button" parent="."]
-text = "Background Music: On"
-rect_min_size = Vector2(280, 60)
-position = Vector2(60, 240)
+[node name="BgmToggleButton" type="Button" parent="." unique_id=370155087]
+layout_mode = 0
+offset_left = 60.0
+offset_top = 240.0
+offset_right = 60.0
+offset_bottom = 240.0
 toggle_mode = true
+text = "BGM : On"
 
-[node name="AutopickToggleButton" type="Button" parent="."]
+[node name="AutopickToggleButton" type="Button" parent="." unique_id=1802647068]
+layout_mode = 0
+offset_left = 60.0
+offset_top = 320.0
+offset_right = 60.0
+offset_bottom = 320.0
+toggle_mode = true
 text = "Autopick: Off"
-rect_min_size = Vector2(280, 60)
-position = Vector2(60, 320)
-toggle_mode = true
 
-[node name="ExternalKeyboardToggleButton" type="Button" parent="."]
+[node name="ExternalKeyboardToggleButton" type="Button" parent="." unique_id=468674292]
+layout_mode = 0
+offset_left = 60.0
+offset_top = 400.0
+offset_right = 60.0
+offset_bottom = 400.0
+toggle_mode = true
 text = "External Keyboard: Off"
-rect_min_size = Vector2(280, 60)
-position = Vector2(60, 400)
-toggle_mode = true
 
-[node name="ExitButton" type="Button" parent="."]
+[node name="ExitButton" type="Button" parent="." unique_id=422787163]
+layout_mode = 0
+offset_left = 60.0
+offset_top = 460.0
+offset_right = 60.0
+offset_bottom = 460.0
 text = "Exit"
-rect_min_size = Vector2(280, 60)
-position = Vector2(60, 460)
+
+[node name="PlayerNameText" type="LineEdit" parent="." unique_id=89224161]
+layout_mode = 0
+offset_left = 54.0
+offset_top = 57.0
+offset_right = 227.0
+offset_bottom = 88.0
+alignment = 1
+max_length = 16
+
+[node name="Label" type="Label" parent="PlayerNameText" unique_id=391589081]
+layout_mode = 0
+offset_left = 2.0
+offset_top = -25.0
+offset_right = 42.0
+offset_bottom = -2.0
+text = "PLAYER NAME"
+
+[node name="MultiplesOf" type="LineEdit" parent="." unique_id=1454607219]
+layout_mode = 0
+offset_left = 55.0
+offset_top = 127.0
+offset_right = 228.0
+offset_bottom = 158.0
+placeholder_text = "Digits 1-9 only"
+alignment = 1
+max_length = 16
+
+[node name="Label" type="Label" parent="MultiplesOf" unique_id=2084646335]
+layout_mode = 0
+offset_left = 2.0
+offset_top = -25.0
+offset_right = 42.0
+offset_bottom = -2.0
+text = "FOCUS NUMBERS"
+
+[node name="Label2" type="Label" parent="MultiplesOf" unique_id=62895029]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 34.0
+offset_right = 170.0
+offset_bottom = 49.0
+theme_override_colors/font_color = Color(12.835265, 12.835265, 12.835265, 1)
+theme_override_font_sizes/font_size = 12
+text = "UNRANKED PLAY"
+horizontal_alignment = 1

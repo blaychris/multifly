@@ -10,6 +10,12 @@ public partial class GameState : Node
     // Placeholder for Google Play score submission
     public async void SubmitScoreToGooglePlay(int score)
     {
+        if (!string.IsNullOrEmpty(FocusNumbers))
+        {
+            GD.Print("[Google Play] Skipping score submit because FocusNumbers is set.");
+            return;
+        }
+
         if (!IsCampaignActive)
         {
             GD.Print("[Google Play] Skipping score submit because not in campaign mode.");
@@ -21,8 +27,10 @@ public partial class GameState : Node
         if (firebaseService != null)
         {
             string playerId = OS.GetUniqueId(); // Unique device ID
-            string playerName = "Player";
+            string playerName = string.IsNullOrWhiteSpace(PlayerName) ? "Player" : PlayerName;
             int stage = CurrentLevel;
+            bool isAutopickOn = IsAutopickEnabled;
+            bool isKeyboardSupportOn = IsExternalKeyboardEnabled;
 
             GD.Print($"FirebaseService: Checking existing record for playerId={playerId} before submit...");
             var existingEntry = await firebaseService.FetchLeaderboardEntryAsync(playerId);
@@ -42,7 +50,7 @@ public partial class GameState : Node
             }
 
             GD.Print($"FirebaseService: Submitting new score {score} for playerId={playerId}...");
-            firebaseService.SubmitScore(playerId, playerName, score, stage);
+            firebaseService.SubmitScore(playerId, playerName, score, stage, isAutopickOn, isKeyboardSupportOn);
             return;
         }
 
@@ -50,6 +58,7 @@ public partial class GameState : Node
         // TODO: Integrate with Google Play Games Services
         GD.Print($"[Google Play] Score submitted successfully: {score}");
     }
+
     public const int MaxLevelCount = 5;
     private const string PersistenceFilePath = "user://game_state.json";
     private const long LeaderboardStageScoreMultiplier = 1_000_000_000L;
@@ -88,6 +97,9 @@ public partial class GameState : Node
     public int FliesDestroyed { get; set; }
     public bool IsBackgroundMusicEnabled { get; set; } = true;
     public bool IsAutopickEnabled { get; set; } = false;
+
+    public string PlayerName { get; set; } = "";
+    public string FocusNumbers { get; set; } = string.Empty;
     public bool IsExternalKeyboardEnabled { get; set; } = false;
     public long CurrentCampaignLeaderboardScore { get; private set; }
     public int CurrentCampaignStageScoreTotal { get; private set; }
@@ -113,6 +125,8 @@ public partial class GameState : Node
         public Dictionary<int, long> BestPackedStageScores { get; set; } = new();
         public bool IsAutopickEnabled { get; set; }
         public bool IsExternalKeyboardEnabled { get; set; }
+        public string PlayerName { get; set; } = string.Empty;
+        public string FocusNumbers { get; set; } = string.Empty;
     }
 
     private void LoadPersistentData()
@@ -162,6 +176,8 @@ public partial class GameState : Node
 
             IsAutopickEnabled = data.IsAutopickEnabled;
             IsExternalKeyboardEnabled = data.IsExternalKeyboardEnabled;
+            PlayerName = data.PlayerName ?? string.Empty;
+            FocusNumbers = data.FocusNumbers ?? string.Empty;
         }
         catch (Exception e)
         {
@@ -178,7 +194,9 @@ public partial class GameState : Node
             BestStageScores = new Dictionary<int, int>(bestStageScores),
             BestPackedStageScores = new Dictionary<int, long>(bestPackedStageScores),
             IsAutopickEnabled = IsAutopickEnabled,
-            IsExternalKeyboardEnabled = IsExternalKeyboardEnabled
+            IsExternalKeyboardEnabled = IsExternalKeyboardEnabled,
+            PlayerName = PlayerName ?? string.Empty,
+            FocusNumbers = FocusNumbers ?? string.Empty
         };
 
         var options = new JsonSerializerOptions { WriteIndented = true };
@@ -214,6 +232,18 @@ public partial class GameState : Node
         bestFlyCountZeroTimesMs.Clear();
         bestStageScores.Clear();
         bestPackedStageScores.Clear();
+    }
+
+    public void SetPlayerName(string playerName)
+    {
+        PlayerName = playerName;
+        SavePersistentData();
+    }
+
+    public void SetFocusNumbers(string focusNumbers)
+    {
+        FocusNumbers = focusNumbers;
+        SavePersistentData();
     }
 
     public void StartCampaign(int startLevel)
@@ -294,24 +324,30 @@ public partial class GameState : Node
         int normalizedLevel = Math.Max(1, stageResult.Level);
         int normalizedScore = Math.Max(0, stageResult.StageScore);
 
-        // Track best score for leaderboard
-        bool isNewBestScore = !bestStageScores.TryGetValue(normalizedLevel, out int existingBestScore) || normalizedScore > existingBestScore;
-        if (isNewBestScore)
-        {
-            bestStageScores[normalizedLevel] = normalizedScore;
-        }
-
         // Track campaign run score (not best)
         campaignStageScores[normalizedLevel] = normalizedScore;
 
-        stageResult.Level = normalizedLevel;
-        stageResult.StageScore = normalizedScore;
-        stageResult.PackedLeaderboardScore = BuildPackedLeaderboardScore(stageResult);
+        // Track best score for leaderboard
+        bool isNewBestScore = false;
         bool isNewBestPackedScore = false;
-        if (!bestPackedStageScores.TryGetValue(normalizedLevel, out long existingPackedStageScore) || stageResult.PackedLeaderboardScore > existingPackedStageScore)
+        if (string.IsNullOrEmpty(FocusNumbers))
         {
-            bestPackedStageScores[normalizedLevel] = stageResult.PackedLeaderboardScore;
-            isNewBestPackedScore = true;
+            isNewBestScore = !bestStageScores.TryGetValue(normalizedLevel, out int existingBestScore) || normalizedScore > existingBestScore;
+            if (isNewBestScore)
+            {
+                bestStageScores[normalizedLevel] = normalizedScore;
+            }
+
+            stageResult.PackedLeaderboardScore = BuildPackedLeaderboardScore(stageResult);
+            if (!bestPackedStageScores.TryGetValue(normalizedLevel, out long existingPackedStageScore) || stageResult.PackedLeaderboardScore > existingPackedStageScore)
+            {
+                bestPackedStageScores[normalizedLevel] = stageResult.PackedLeaderboardScore;
+                isNewBestPackedScore = true;
+            }
+        }
+        else
+        {
+            stageResult.PackedLeaderboardScore = 0; // or some default
         }
 
         if (IsCampaignActive)

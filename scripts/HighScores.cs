@@ -10,6 +10,10 @@ public partial class HighScores : Control
     private HBoxContainer? scoreTemplate;
     private ScrollContainer? scoreScroll;
     private Button? backButton;
+    private Button? betterFilterButton;
+    private Button? allFilterButton;
+    private List<LeaderboardEntry> allEntries = new();
+    private bool showBetterOnly = false;
 
     public override async void _Ready()
     {
@@ -17,6 +21,8 @@ public partial class HighScores : Control
         scoreScroll = GetNodeOrNull<ScrollContainer>("HighScoreList/ScoreScroll");
         scoreTemplate = GetNodeOrNull<HBoxContainer>("HighScoreList/ScoreEntry");
         backButton = GetNodeOrNull<Button>("HighScoreList/BackButton");
+        betterFilterButton = GetNodeOrNull<Button>("HighScoreList/FilterButtonsContainer/BetterButton");
+        allFilterButton = GetNodeOrNull<Button>("HighScoreList/FilterButtonsContainer/AllButton");
 
         scoreTemplate?.SetVisible(false);
         if (backButton != null)
@@ -24,6 +30,17 @@ public partial class HighScores : Control
             backButton.Pressed += OnBackPressed;
         }
 
+        if (betterFilterButton != null)
+        {
+            betterFilterButton.Pressed += OnBetterFilterPressed;
+        }
+
+        if (allFilterButton != null)
+        {
+            allFilterButton.Pressed += OnAllFilterPressed;
+        }
+
+        UpdateFilterButtonStates();
         UpdateScoreScrollSize();
         await LoadHighScoresAsync();
     }
@@ -61,10 +78,10 @@ public partial class HighScores : Control
         if (firebaseService != null)
         {
             GD.Print("HighScores: FirebaseService found. Fetching leaderboard entries...");
-            var entries = await firebaseService.FetchLeaderboardAsync();
-            GD.Print($"HighScores: FetchLeaderboardAsync returned {entries.Count} entries.");
+            allEntries = await firebaseService.FetchLeaderboardAsync();
+            GD.Print($"HighScores: FetchLeaderboardAsync returned {allEntries.Count} entries.");
 
-            if (entries.Count == 0)
+            if (allEntries.Count == 0)
             {
                 var placeholderText = "No leaderboard entries found.";
                 if (firebaseService.LastFetchFailed)
@@ -81,20 +98,47 @@ public partial class HighScores : Control
                 return;
             }
 
-            var displayEntries = GetDisplayEntries(entries);
-            int rank = entries.IndexOf(displayEntries[0]) + 1;
-            foreach (var entry in displayEntries)
-            {
-                AddScoreRow(rank, entry);
-                rank++;
-            }
-
-            GD.Print($"HighScores: Displayed {displayEntries.Count} leaderboard rows.");
+            DisplayFilteredScores();
             return;
         }
 
         GD.Print("HighScores: FirebaseService not available. Cannot fetch leaderboard.");
         AddPlaceholderRow("FirebaseService not available.");
+    }
+
+    private void DisplayFilteredScores()
+    {
+        ClearScoreRows();
+
+        List<LeaderboardEntry> filteredEntries = GetFilteredEntries();
+        var displayEntries = GetDisplayEntries(filteredEntries);
+        int rank = filteredEntries.IndexOf(displayEntries[0]) + 1;
+        foreach (var entry in displayEntries)
+        {
+            AddScoreRow(rank, entry);
+            rank++;
+        }
+
+        GD.Print($"HighScores: Displayed {displayEntries.Count} leaderboard rows with filter enabled={showBetterOnly}.");
+    }
+
+    private List<LeaderboardEntry> GetFilteredEntries()
+    {
+        if (!showBetterOnly)
+        {
+            return allEntries;
+        }
+
+        // "Better" filter: show only scores where both isAutopickOn and isKeyboardSupportOn are false
+        var filtered = new List<LeaderboardEntry>();
+        foreach (var entry in allEntries)
+        {
+            if (!entry.IsAutopickOn && !entry.IsKeyboardSupportOn)
+            {
+                filtered.Add(entry);
+            }
+        }
+        return filtered;
     }
 
     private void AddScoreRow(int rank, LeaderboardEntry entry)
@@ -136,7 +180,7 @@ public partial class HighScores : Control
             rowContent.Name = $"ScoreRow{rank}";
         }
 
-        string displayName = isCurrentPlayer ? "You" : entry.PlayerName;
+        string displayName =  entry.PlayerName;
 
         var nameLabel = new Label
         {
@@ -227,5 +271,32 @@ public partial class HighScores : Control
     private void OnBackPressed()
     {
         GetTree().ChangeSceneToFile("res://scenes/MainMenu.tscn");
+    }
+
+    private void OnBetterFilterPressed()
+    {
+        showBetterOnly = true;
+        UpdateFilterButtonStates();
+        DisplayFilteredScores();
+    }
+
+    private void OnAllFilterPressed()
+    {
+        showBetterOnly = false;
+        UpdateFilterButtonStates();
+        DisplayFilteredScores();
+    }
+
+    private void UpdateFilterButtonStates()
+    {
+        if (betterFilterButton != null)
+        {
+            betterFilterButton.Disabled = showBetterOnly;
+        }
+
+        if (allFilterButton != null)
+        {
+            allFilterButton.Disabled = !showBetterOnly;
+        }
     }
 }

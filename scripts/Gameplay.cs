@@ -62,6 +62,56 @@ public partial class Gameplay : Node2D
         }
     }
 
+    private List<int> GetAvailableMultipliers(bool isLeft)
+    {
+        if (isLeft && !string.IsNullOrEmpty(gameState?.FocusNumbers))
+        {
+            return ParseFocusNumbers();
+        }
+        return currentStageSettings.GetAvailableMultipliers(isLeft);
+    }
+
+    private List<int> ParseFocusNumbers()
+    {
+        List<int> digits = new();
+        var seenDigits = new HashSet<int>();
+        if (string.IsNullOrEmpty(gameState?.FocusNumbers))
+            return digits;
+
+        foreach (string rawPart in gameState.FocusNumbers.Split(','))
+        {
+            string part = rawPart.Trim();
+            if (string.IsNullOrEmpty(part))
+                continue;
+
+            if (part.Length == 1)
+            {
+                if (int.TryParse(part, out int digit) && digit >= 1 && digit <= 9 && !seenDigits.Contains(digit))
+                {
+                    digits.Add(digit);
+                    seenDigits.Add(digit);
+                }
+            }
+            else
+            {
+                // Multi-digit number, split into individual digits
+                foreach (char c in part)
+                {
+                    if (c >= '1' && c <= '9')
+                    {
+                        int digit = c - '0';
+                        if (!seenDigits.Contains(digit))
+                        {
+                            digits.Add(digit);
+                            seenDigits.Add(digit);
+                        }
+                    }
+                }
+            }
+        }
+        return digits;
+    }
+
     private int playerHearts;
     private int remainingFliesTarget;
     private Fly? selectedFly;
@@ -105,10 +155,8 @@ public partial class Gameplay : Node2D
     {
         UpdateStageClearCountdown((float)delta);
 
-        // Only refresh autopick selection while autopick is enabled and
-        // either no fly is selected or the current selection was chosen by autopick.
-        if (floatingNumpad != null && floatingNumpad.IsAutopickEnabled &&
-            (selectedFly == null || selectedFlyIsAutopick))
+        // Only refresh autopick selection while autopick is enabled and no fly is currently selected.
+        if (floatingNumpad != null && floatingNumpad.IsAutopickEnabled && selectedFly == null)
         {
             UpdateAutopickSelection();
         }
@@ -187,8 +235,8 @@ public partial class Gameplay : Node2D
         backgroundTexture = GetNodeOrNull<TextureRect>("TextureRect");
 
         // Debug: Print available multipliers for this stage
-        var leftMultipliers = currentStageSettings.GetAvailableMultipliers(true);
-        var rightMultipliers = currentStageSettings.GetAvailableMultipliers(false);
+        var leftMultipliers = GetAvailableMultipliers(true);
+        var rightMultipliers = GetAvailableMultipliers(false);
         GD.Print($"[DEBUG] Left multipliers for stage {gameState?.CurrentLevel ?? 1}: {string.Join(", ", leftMultipliers)}");
         GD.Print($"[DEBUG] Right multipliers for stage {gameState?.CurrentLevel ?? 1}: {string.Join(", ", rightMultipliers)}");
         // Set background image per stage
@@ -463,8 +511,8 @@ public partial class Gameplay : Node2D
         foreach (var recent in recentMultiplierPairs)
             usedPairs.Add(recent);
 
-        var leftMultipliers = currentStageSettings.GetAvailableMultipliers(true);
-        var rightMultipliers = currentStageSettings.GetAvailableMultipliers(false);
+        var leftMultipliers = GetAvailableMultipliers(true);
+        var rightMultipliers = GetAvailableMultipliers(false);
         List<Vector2I> availablePairs = new();
         foreach (int leftMultiplier in leftMultipliers)
         {
@@ -515,7 +563,7 @@ public partial class Gameplay : Node2D
         List<float> pairWeights = new(availablePairs.Count);
         foreach (Vector2I pair in availablePairs)
         {
-            float pairWeight = currentStageSettings.GetMultiplierWeight(pair.X, true) * currentStageSettings.GetMultiplierWeight(pair.Y, false);
+            float pairWeight = GetMultiplierWeight(pair.X, true) * currentStageSettings.GetMultiplierWeight(pair.Y, false);
             pairWeights.Add(pairWeight);
             totalWeight += pairWeight;
         }
@@ -537,6 +585,16 @@ public partial class Gameplay : Node2D
         }
 
         return availablePairs[^1];
+    }
+
+    private float GetMultiplierWeight(int value, bool isLeft)
+    {
+        if (isLeft && !string.IsNullOrEmpty(gameState?.FocusNumbers))
+        {
+            return 1.0f;
+        }
+
+        return currentStageSettings.GetMultiplierWeight(value, isLeft);
     }
 
     public void SelectFly(Fly fly, bool isAutopick = false)
@@ -649,7 +707,10 @@ public partial class Gameplay : Node2D
             if (flies.Count == 0)
             {
                 TriggerStageClear();
+                return;
             }
+
+            UpdateAutopickSelection();
             return;
         }
 
@@ -920,6 +981,12 @@ public partial class Gameplay : Node2D
             if (flies.Count == 0)
             {
                 TriggerStageClear();
+                return;
+            }
+
+            if (selectedFly == null && floatingNumpad?.IsAutopickEnabled == true)
+            {
+                UpdateAutopickSelection();
             }
 
             return;
